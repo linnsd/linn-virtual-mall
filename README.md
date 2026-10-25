@@ -158,3 +158,28 @@ Validation: `node --test tests/*.test.js`။ Collision / reverse recovery / thin
 - Mall ထဲဝင်ချိန် ပေးထားသော သီချင်း ၃ ပုဒ်ကို အစဉ်လိုက်ဖွင့်ပြီး နောက်ဆုံးပုဒ်ပြီးလျှင် ပထမပုဒ်ကနေ ပြန်ပတ်ပါတယ်။
 - **⏭ ကျော်ရန် / Skip song** ခလုတ်နဲ့ နောက်တစ်ပုဒ်ပြောင်းနိုင်ပါတယ်။ Mobile မှာ **⋯** menu ထဲကနေ သုံးနိုင်ပါတယ်။ **သီချင်း / Music** နဲ့ ပိတ်/ပြန်ဖွင့်နိုင်ပြီး ပိတ်ထားချိန် ကျော်လျှင် အသံပြန်မဖွင့်ပါ။
 - Playlist စာရင်းက `lib/playlist.js` ရဲ့ `MALL_TRACKS` ဖြစ်ပြီး audio files က `assets/music/` မှာရှိပါတယ်။ လက်ရှိပုဒ်ပဲ load လုပ်ပါတယ်။ ဖိုင်အသစ်အစားထိုးရင် immutable cache ကြောင့် filename version ကိုပါ ပြောင်းပါ။
+
+### Scene performance diagnostics and batching
+
+ပုံမှန် URL မှာ optimization အလိုအလျောက် ဖွင့်ထားပါတယ်။ FPS / draw calls စစ်ဖို့ URL နောက်မှာ `?perf=1` ထည့်ပြီး **Performance** panel ကို ဖွင့်ပါ။ Standing / Walking / Driving / Multiplayer scenario ရွေး၊ **Reset** နှိပ်ပြီး တူညီတဲ့ လမ်းကြောင်းနဲ့ စမ်းနိုင်ပါတယ်။ **Export JSON** က လက်ရှိ sample window ကို စက်ထဲ download လုပ်ပေးပါတယ်။ Server ဆီ telemetry မပို့ပါ။
+
+- Optimized comparison: `http://localhost:3000/?perf=1`
+- Unoptimized comparison: `http://localhost:3000/?perf=1&cull=0&batch=0`
+- နောက်ဆုံး rendered frames 240 ခုအထိ FPS၊ frame p95၊ CPU update/render submission time၊ >50ms frames၊ draw calls / triangles နဲ့ GPU-loaded geometry / texture **အရေအတွက်** ပြပါတယ်။ CPU timings က GPU render duration မဟုတ်ပါ။ Background tab ကနေ ပြန်ဝင်ချိန်နဲ့ quality / viewport ပြောင်းချိန်မှာ samples ပြန်စပါတယ်။
+
+Static fixtures တွေကို နေရာအလိုက် 12m zones နဲ့ ခွဲထားပြီး camera frustum အပြင်က zones တွေကို render မလုပ်ပါ။ ဆိုင်ထဲမှာ camera နဲ့ player နှစ်ခုလုံးရှိမှသာ အထပ်နှစ်ဆင့်ကျော်က interior fixtures တွေကို hide ပါတယ်။ အနီးက အထပ်တစ်ဆင့်၊ facade၊ slabs၊ အမိုးတွေကို ထိန်းထားပြီး overview၊ ကားမောင်းချိန်၊ escalator well အနီးနဲ့ lift/escalator စီးချိန်မှာ floor restriction မသုံးပါ။
+
+တူညီတဲ့ material သုံးတဲ့ opaque box fixtures တွေကို zone တစ်ခုချင်းစီမှာ unit-box `InstancedMesh` နဲ့ ပေါင်းဆွဲပါတယ်။ တံခါးရွေ့ခြင်းနဲ့ overview အမိုးဖျောက်ခြင်းကို သီးခြားထိန်းထားပါတယ်။ မီးပုံးရဲ့ opaque ribs / caps / tassels တွေလည်း instancing သုံးပြီး sway transform ကို လိုက်ပြောင်းပါတယ်။ Transparent glass၊ lantern body နဲ့ glow တွေက မူလ sorting ကို ဆက်သုံးပါတယ်။
+
+Validation: `node --test tests/*.test.js` — frame statistics၊ diagnostics flags၊ floor visibility နဲ့ batching exclusions ကို စစ်ပါတယ်။ FPS တိုးတက်မှုက device / viewport / graphics setting / online guests ပေါ် မူတည်ပါတယ်။ အရင်/အပြီးတိုင်းတဲ့အခါ setting တူတူ၊ assets loading ပြီးချိန်နဲ့ peer count နီးစပ်တဲ့အချိန်ကို သုံးပါ။
+
+Chrome local sample (2026-10-25), Shop 1 ရှေ့ initial standing view၊ assets loading ပြီးနောက် rendered frames 240 ခု:
+
+| Viewport / mode | Optimization | Draw calls / frame | CPU / frame | FPS / frame p95 |
+|---|---|---:|---:|---|
+| 1280 × 720 / HD | Off | 3518 | 6.2 ms | 60.0 / 17.3 ms |
+| 1280 × 720 / HD | On | 2140 | 5.7 ms | 60.0 / 17.1 ms |
+| 390 × 844 / Lite | Off | 366 | 2.7 ms | 30.0 / 34.0 ms |
+| 390 × 844 / Lite | On | 228 | 2.0 ms | 30.0 / 33.7 ms |
+
+ဒီတိုင်းတာမှုက Chrome desktop ပေါ်မှာ ဖြစ်ပြီး phone viewport ကိုပဲ emulate လုပ်ထားပါတယ်။ Physical phone CPU/GPU test မဟုတ်ပါ။ Live remote peers အရေအတွက်က desktop 1 → 2၊ phone viewport 2 → 1 ဖြစ်လို့ timing / triangles တွေမှာ network guest ပြောင်းလဲမှုလည်း ပါနိုင်ပါတယ်။ FPS cap ရှိပြီး အရင်ကတည်းက target FPS ရတဲ့စက်မှာ ပိုမြင့်တဲ့ FPS ထက် render ဝန်လျော့တာကို ပြပါတယ်။ Walking / overview / driving to Shop 3 ကို browser မှာ စမ်းပြီး Three.js r128 နဲ့ instance world bounds၊ animated transforms၊ movable doors နဲ့ roof visibility ကို သီးခြားစစ်ထားပါတယ်။
