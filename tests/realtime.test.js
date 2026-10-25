@@ -239,3 +239,12 @@ test('guests transferring from Shop 2 to Shop 4 broadcast the new site without a
   peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,4);assert.equal(peer.presence.f,0);
   a.close();b.close();
 });
+
+test('Shop 5 presence stays on the single hall floor for remote guests',async()=>{
+  const net=network(),a=net.make(net.client(A),A,TA),b=net.make(net.client(B),B,TB);
+  await tick();await a.presence({...state('Ottarathiri guest'),site:5,f:0,x:-180,z:-642});await b.presence({...state('Paung Laung guest'),site:3,f:2});await tick();
+  let peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,5);assert.equal(peer.presence.f,0);
+  net.advance(250);await a.presence({...state('Ottarathiri guest'),site:5,f:2,x:-181,z:-645});
+  peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,5);assert.equal(peer.presence.f,0);assert.equal(peer.presence.z,-645);
+  a.close();b.close();
+});

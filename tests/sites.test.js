@@ -12,14 +12,14 @@ test('Shop 2 is one connected ground floor with three accessible front entrances
   const spawn=siteSpawn(2);assert.equal(spawn.site,2);assert.ok(entranceOpen(SITES[2],spawn.x-SITES[2].ox));
 });
 test('travel graph supports Shop 3 to Shop 2 and return, and routes Shop 1 via Shop 3',()=>{
-  assert.deepEqual(destinations(3),[1,2]);assert.deepEqual(destinations(2),[3,4]);
+  assert.deepEqual(destinations(3),[1,2,5]);assert.deepEqual(destinations(2),[3,4]);
   assert.equal(nextHop(1,2),3);assert.equal(nextHop(2,1),3);assert.equal(nextHop(3,2),2);assert.equal(nextHop(1,4),3);assert.equal(nextHop(4,1),2);assert.equal(nextHop(3,4),2);
   assert.equal(travelLeg(2,4).key,'2-4');assert.equal(travelLeg(4,2).reverse,true);
   assert.deepEqual([travelLeg(3,2).key,travelLeg(3,2).reverse],['3-2',false]);
   assert.equal(travelLeg(2,3).reverse,true);assert.equal(travelLeg(3,1).reverse,true);
   assert.equal(travelLeg(1,999),null);assert.equal(travelLeg(2,2),null);
 });
-test('both roads connect the correct parking bays and have finite waypoints',()=>{
+test('all inter-shop roads connect the correct parking bays and have finite waypoints',()=>{
   for(const road of ROAD_LINKS){
     const points=roadPoints(road.key),from=parkingFor(SITES[road.from]),to=parkingFor(SITES[road.to]);
     assert.deepEqual(points[0],[from.x,from.z]);assert.deepEqual(points.at(-1),[to.x,to.z]);

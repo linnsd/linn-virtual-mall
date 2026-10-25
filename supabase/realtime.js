@@ -15,6 +15,7 @@ export function normalizeState(input, staffAllowed = false) {
     l: input.l === 'real' ? 'real' : 'custom', x: input.x, y: input.y, z: input.z, r: input.r,
     ...normalizeLocation(input.site,input.f),
     m: input.m ? 1 : 0, d: input.d ? 1 : 0, st: input.st ? 1 : 0, staff: staffAllowed && input.staff ? 1 : 0 };
+  if(output.d&&input.v==='bike')output.v='bike';
   if (input.c && typeof input.c === 'object') {
     output.c = {};
     for (const key of ['top', 'bottom', 'hair', 'glasses', 'hat']) {

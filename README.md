@@ -1,7 +1,7 @@
 # Linn IT Mall · Vercel deploy
 
 ## ပါဝင်တာများ
-- `index.html` – Mall တစ်ခုလုံး (3D, Shop 1 / Shop 3 / Shop 2 / Shop 4 ဆိုင် ၄ ဆိုင်, ကား, မြေပုံ, မြန်မာ/English)
+- `index.html` – Mall တစ်ခုလုံး (3D, Shop 1 / Shop 3 / Shop 2 / Shop 4 / Shop 5 ဆိုင် ၅ ဆိုင်, ကား, မြေပုံ, မြန်မာ/English)
 - `assets/` – 3D model (.glb), poster, နံရံပုံ, သီချင်း
 - `data/contact.json` – Viber / Messenger / ဖုန်းနံပါတ်
 - `data/catalog.json` – တကယ့်ပစ္စည်းစာရင်း (Claude ထဲက Admin ကနေ import လုပ်ထားတာကို ဒီမှာ ထည့်နိုင်)
@@ -211,3 +211,45 @@ Validation: `node --test tests/*.test.js` တွင် Shop 4 entrance/floor val
 Shop 4 browser verification: Shop 2 → Shop 4 auto ခရီးကို Skip မသုံးဘဲ ရောက်နိုင်ခြင်း၊ right IT entrance / product drawer၊ left entrance မှ rear Service panel သို့ တိုက်ရိုက်လမ်းလျှောက်ခြင်း၊ waiting seat ထိုင်/ထခြင်း၊ 390×844 Lite viewport နဲ့ mobile controls ကို စမ်းထားပါတယ် (ကျယ်သော layout မူကွဲပေါ်က checks)။ Narrow layout အတွက် entrance/aisle/standing clearance regression checks ကို ပြန်စစ်ပါတယ်။ Traffic ကို စတင်ချိန် ၅ မျိုးဖြင့် သွား/ပြန် simulation စမ်းပြီးပါပြီ။ Native Shop 4 → Shop 2 browser ခရီးအပြည့်ကို နောက်ဆုံးပြင်ပြီးနောက် ထပ်မစမ်းရသေးပါ။
 
 Narrow Shop 4 verification: အလယ် aisle ကနေ rear Service counter သို့ လမ်းလျှောက်ရောက်နိုင်ခြင်း၊ Service panel၊ two-seat waiting bench ထိုင်/ထခြင်းကို browser မှာ ပြန်စမ်းထားပါတယ်။ Floor map၊ walking/car collision bounds နဲ့ scene culling တို့သည် 11×24m footprint ကို သုံးပါတယ်။
+
+
+## Shop 5 · Ottarathiri Premium Hall
+
+- **No.OS-16, Nyarna Dipa Quarter, Ottarathiri Township**။ Setup ဆိုင်ရွေးရာမှ Shop 5 ရွေးနိုင်ပြီး တိုက်ရိုက်စမ်းရန် `http://localhost:3000/?shop=5` ကို ဖွင့်ပါ။
+- ပေးထားသော actual exterior ကို အခြေခံ၍ အပြာရောင် portal frame၊ rooftop LINN ဆိုင်းဘုတ်၊ IT SOLUTIONS / SERVICES / MOBILE & ELECTRONICS အဖြူရောင် panel၊ ညာဘက် dark logo panel နဲ့ glass facade ဆောက်ထားပါတယ်။ Photo board မပါပါ။
+- Prototype အတိုင်း **38×26m တစ်ထပ်တည်း hall** ဖြစ်ပြီး ရှေ့ဘယ် Samsung၊ ရှေ့ညာ iPhone၊ mobile/accessories islands၊ ရှေ့ဘက် waiting tables ၂ ဝိုင်း၊ ဘယ်ဘက် mobile display ၆ ခု၊ ညာဘက် laptops၊ အလယ်ဘယ် Server Room / WC၊ အလယ်ညာ Gaming / Office၊ နောက်ညာ Washing Machine / Refrigerator၊ နောက်အလယ် TV wall နဲ့ နောက်ဘယ် Service counter / waiting tables ၂ ဝိုင်း ပါပါတယ်။
+- **ဝင်ပေါက် ၃ ခု** (Mobile / central automatic glass / IT) နဲ့ Server Room / WC / Gaming / Office ဝင်ပေါက်များ ပါပါတယ်။ နောက်ဘက် gallery ကို 0.45m မြင့်ထားပြီး အလယ် သုံးထစ်လှေကားကနေ တက်/ဆင်းလျှင် avatar နဲ့ camera အမြင့်ပါ လိုက်ပြောင်းပါတယ်။ Floor index သည် တစ်ထပ်တည်းဖြစ်နေပါတယ်။
+- Central glass doors သည် local visitor သို့မဟုတ် တူညီသော Shop 5 ထဲက remote guest ဝင်ပေါက်နား ရောက်လာလျှင် အလိုအလျောက်ဖွင့်ပြီး ရှင်းသွားလျှင် ပိတ်ပါတယ်။ Door glass၊ frame နဲ့ handles ကို static batching မှ ချန်ထားပါတယ်။
+- Existing catalog၊ Service panel၊ ထိုင်နိုင်သော waiting seats၊ staff၊ coupons၊ parking နဲ့ realtime ကို ဆက်သုံးထားပါတယ်။ Supabase SQL အသစ် run ရန် မလိုပါ။ Deploy ပြီးလျှင် clients အားလုံး refresh လုပ်ပါ။
+- **Shop 3 ↔ Shop 5** manual/auto ကားလမ်းကို ပေးထားသော route screenshot အခြေခံ Railway Road → Ottarathiri Road ပုံစံဖြင့် virtual world ထဲ အကွာအဝေးချုံ့၍ ဆောက်ထားပါတယ်။ Area map မှာ ရွှေဝါရောင်နဲ့ ပြထားပါတယ်။ Live GPS / traffic time မဟုတ်ပါ။ အခြားဆိုင်များမှ Shop 3 မှာ ကားပြောင်းစီးနိုင်ပါတယ်။
+
+Validation: `node --test tests/*.test.js` တွင် hall corners / WC / office doorway reachability၊ waiting-seat clearance၊ local/remote automatic doors၊ Shop 5 realtime location နဲ့ route transfers ကို စစ်ထားပါတယ်။ Three.js r128 မှာ parking endpoints၊ parked cars နဲ့ main/annex buildings မထိစေရန် route sample 2001 ခုစီ၊ သွား/ပြန် နှစ်ဖက်စစ်ထားပြီး traffic simulation ကို စတင်ချိန် ၂ မျိုးဖြင့် စစ်ထားပါတယ်။ Physical phone CPU/GPU test မဟုတ်ပါ။
+
+Previous Shop 5 browser verification (before the interior rearrangement): automatic glass entrance ဖြတ်ဝင်ခြင်း၊ iPhone product drawer၊ Office/WC doorway များမှ အတွင်းဝင်ခြင်းနဲ့ 390×844 Lite mobile controls ကို စမ်းထားပါတယ်။ ကားလမ်းမှာ Shop 5 → Shop 3 ရောက်ရှိမှုနဲ့ Shop 5 ပြန်ဝင်နိုင်မှုကို browser UI မှ စစ်ထားပါတယ်။ Room reachability / local+remote door state ကို automated tests ဖြင့်ပါ စစ်ပါတယ်။
+
+Latest Shop 5 interior: reference floor plan အတိုင်း ပြန်စီပြီး entrance ၃ ခု၊ rooms / product corners၊ chair stand-up clearance၊ အလယ်တည့်တည့် လျှောက်လမ်းနဲ့ raised gallery stair heights ကို automated tests ဖြင့် စစ်ထားပါတယ် (60 tests passing)။ Browser တွင် central entrance → TV gallery လမ်းလျှောက်ခြင်းနဲ့ လှေကား တက်/ဆင်း စမ်းထားပါတယ်။ Shop 5 အပေါ်စီး view သည် floor plan ကို ရှေ့မှမြင့်မြင့် ကြည့်နိုင်ရန် ချိန်ထားပြီး upper fascia / room roofs ကို ဖျောက်ထားပါတယ်။
+
+## Traffic နဲ့ parking ကားပုံစံများ
+
+- Sedan / hatchback / SUV / pickup ၄ မျိုး၊ paint အရောင် ၁၂ မျိုးကို စုစုပေါင်း ၄၈ မူကွဲအဖြစ် ရောစပ်ထားပါတယ်။ Traffic နဲ့ parking ကားတွေမှာ ရှေ့နောက်တစ်ဆက်တည်း ပုံစံ / အရောင် မထပ်အောင် စီထားပါတယ်။ Remote guest ကားအတွက် peer ID အပေါ်မူတည်ပြီး တည်ငြိမ်တဲ့ appearance သုံးပါတယ်။
+- `car_body.glb` က Linn မောင်းနိုင်တဲ့ကားအတွက် ဖြစ်ပါတယ်။ Traffic / parking ကားတွေကို model တစ်ခုတည်းနဲ့ ထပ်မအစားထိုးတော့ပါ။ `lib/vehicles.js` သည် lightweight geometry / materials မျှဝေသုံးပြီး per-car texture / model downloads အသစ် မလိုပါ။
+- Existing parking / lane collision footprint အတွင်း ကားအားလုံး ဆံ့ပါတယ်။ SUV roof အမြင့်ကို flying-car collision တွင်ပါ ထည့်စစ်ထားပါတယ်။
+- Validation: tests ၆၃ ခု အောင်မြင်၊ Three.js r128 ဖြင့် မူကွဲ ၄၈ ခု၏ actual mesh bounds / wheels / geometry reuse စစ်ပြီး parking view ကို browser မှာ ကြည့်စစ်ထားပါတယ်။
+
+## လမ်းပတ်ဝန်းကျင်နှင့် ဆိုင်ကယ်စီးခြင်း
+
+- Inter-shop လမ်းကြောင်း ၄ ခုတွင် အိမ်တန်း၊ ဆိုင်ခန်း၊ လမ်းမီး၊ လမ်းဘေးလျှောက်လမ်းနှင့် edge lines ဖြည့်ထားပါတယ်။ Roads / junctions / ဆိုင်ဝင်း / မြစ် / ရှိပြီးသားအဆောက်အဦးများကို ရှောင်ပြီး နေရာချထားပါတယ်။ Area map မှာလည်း အိမ်နဲ့ ဆိုင်ကယ်နေရာတွေ ပြပါတယ်။ ဤပတ်ဝန်းကျင်သည် ချုံ့ထားသော virtual town ဖြစ်ပါတယ်။
+- ဆိုင်တိုင်း၏ car parking ဘယ်ဘက် **MOTORBIKE** နေရာသို့ သွားပါ။ **ကိုယ်တိုင်စီး** သို့မဟုတ် **အလိုအလျောက်စီး** ကို ရွေးနိုင်ပါတယ်။ Shop 3 မှ Shop 1 / 2 / 5၊ Shop 2 မှ Shop 4 သို့ ဆက်သွားနိုင်ပါတယ်။
+- ကိုယ်တိုင်စီးရန် W/S မောင်း/နောက်ဆုတ်၊ A/D ကွေ့၊ Space ဘရိတ် သို့မဟုတ် mobile joystick / brake ကို သုံးပါ။ ဆိုင်ကယ်နေရာအနီး အရှိန်လျှော့၍ **ဒီမှာ ရပ်မည် (E)** ဖြင့် ဆင်းနိုင်ပါတယ်။ **Skip ride** က ရွေးထားသော destination သို့ ခရီးကျော်ပေးပါတယ်။ ဆိုင်ကယ်ကို ပျံသန်းစနစ် မထည့်ထားပါ။
+- Narrow bike collision hull၊ traffic avoidance နှင့် မြစ်/အဆောက်အဦး collision ကို သုံးထားပါတယ်။ Multiplayer presence တွင် `v: 'bike'` ကို စစ်ပြီး ပို့/ပြသပါတယ်။ Client အားလုံး refresh လုပ်ရန် လိုပါတယ်။ SQL ပြင်ရန် မလိုပါ။
+
+### Vehicle detail နှင့် wheel motion
+
+- Existing textured `bike_body.glb` ကို ride stations မှာ သုံးပြီး ရှေ့/နောက် rounded tyre / rim meshes သီးခြားလည်ခြင်း၊ ရှေ့ဘီးကွေ့ခြင်းနှင့် ကွေ့ချိန် lean ပါပါတယ်။ Rigged rider ၏ knees / torso pose နှင့် two-bone arm IK ကို handlebars အတွက် ချိန်ထားပါတယ်။
+- Parking / traffic ကား ၄ မျိုးတွင် curved body / wheel arches၊ rounded tyres၊ alloy spokes / brake discs၊ window reflections၊ grille / LED lights၊ SUV roof rails နှင့် pickup cargo bed ထည့်ထားပါတယ်။ Geometry / materials / reflection map မျှဝေသုံးထားပါတယ်။
+- Main Linn car ၏ single-mesh GLB ကို wheel regions ခွဲပြီး မူရင်း UV/material များကို ထိန်းထားပါတယ်။ Travel distance / tyre radius အလိုက် wheel angle တွက်၍ နောက်ဆုတ်လျှင် ပြောင်းပြန်လည်ပြီး ရပ်လျှင် ရပ်ပါတယ်။ Auto/manual steering နဲ့ remote vehicle wheel motion ပါ ချိတ်ထားပါတယ်။
+- Validation: Native browser တွင် Shop 5 → Shop 3 ဆိုင်ကယ် auto ခရီးအပြည့်၊ manual throttle / brake / reverse / source parking စမ်းထားပါတယ်။ လမ်းကြောင်း ၄ ခု သွား/ပြန်ကို real Three.js samples 2001 ခုစီဖြင့် buildings / parked cars မထိကြောင်း စစ်ထားပါတယ်။ Vehicle variants ၄၈ ခု actual geometry bounds နှင့် supplied GLB wheel partitions / rolling / steering ကိုလည်း စစ်ထားပါတယ်။
+
+Latest verification: `node --test tests/*.test.js` တွင် tests 70 ခု အောင်မြင်ပါတယ်။ Quantized / interleaved GLB attributes ကို float coordinates အဖြစ် ပြောင်းခြင်း၊ radius အလိုက် wheel rotation၊ reverse / zero speed နှင့် front-only steering regression checks ပါပါတယ်။
+
+Final native check: updated textured motorcycle ဖြင့် Shop 5 → Shop 3 auto arrival ကို ထပ်စမ်းပြီး manual motorcycle / car throttle, steering and braking တွင် app error မတွေ့ပါ။ Manual ride ၏ ခရီးကျော်ခလုတ်ကို **Skip ride** ဟု အမှန်တကယ်လုပ်ဆောင်ချက်နှင့် ကိုက်ညီအောင် ပြထားပါတယ်။

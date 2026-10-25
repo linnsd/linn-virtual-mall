@@ -15,7 +15,7 @@ test('the supplied songs exist, play in order and loop the entire playlist',asyn
   const audio=new Media(), p=createPlaylist(audio);
   assert.equal(audio.src,'','no download before entering the mall');
   p.start();assert.equal(audio.src,MALL_TRACKS[0].src);assert.equal(audio.loop,false);
-  for(const index of [1,2,0]){audio.fire('ended');assert.equal(p.current().index,index);assert.equal(audio.paused,false);}
+  for(const index of [...MALL_TRACKS.keys()].slice(1).concat(0)){audio.fire('ended');assert.equal(p.current().index,index);assert.equal(audio.paused,false);}
 });
 test('skip changes songs while paused without enabling playback, and Music resumes the selection',()=>{
   const audio=new Media(),p=createPlaylist(audio);p.start();p.toggle(false);
@@ -24,8 +24,7 @@ test('skip changes songs while paused without enabling playback, and Music resum
 });
 test('broken songs are skipped, all failures stop instead of looping forever, and retry is possible',()=>{
   const audio=new Media(),p=createPlaylist(audio);p.start();
-  audio.fire('error');assert.equal(p.current().index,1);
-  audio.fire('error');assert.equal(p.current().index,2);
+  for(let i=1;i<MALL_TRACKS.length;i++){audio.fire('error');assert.equal(p.current().index,i);}
   audio.fire('error');assert.equal(p.current().enabled,false);assert.equal(audio.paused,true);assert.match(p.current().error,/unavailable/);
   p.toggle(true);assert.equal(p.current().enabled,true);assert.equal(p.current().error,'');
 });
