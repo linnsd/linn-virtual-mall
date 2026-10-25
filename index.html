@@ -177,11 +177,13 @@ kbd{font-family:inherit;font-size:12px;border:1px solid var(--line);border-botto
 .chips button[aria-pressed="true"]{border-color:#7FD38E;color:#7FD38E;background:rgba(47,168,74,.15)}
 .sw{display:flex;flex-wrap:wrap;gap:8px}
 .sw button{width:30px;height:30px;border-radius:50%;border:2px solid rgba(255,255,255,.35);padding:0}
+.sw button.original{width:auto;border-radius:16px;padding:0 10px;font-size:12px;background:#26314a;color:#fff}
 .sw button[aria-pressed="true"]{outline:3px solid #7FD38E;outline-offset:2px}
 .go{margin-top:22px;width:100%;border:0;border-radius:12px;padding:14px;background:#2FA84A;color:#fff;font-size:19px;font-weight:700}
 .setup small{display:block;margin-top:10px;color:#B9C8EE;font-size:13px}
 .spin{position:absolute;right:24px;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);color:#fff;font-size:14px;background:rgba(7,18,52,.55);padding:5px 12px;border-radius:999px}
 .hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .admin{position:fixed;top:0;right:0;bottom:0;width:min(460px,100%);background:var(--panel);border-left:1px solid var(--line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transform:translateX(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);user-select:text;-webkit-user-select:text;z-index:5}
 .admin.on{transform:none}
 .slots{overflow-y:auto;padding:12px 20px 24px;display:flex;flex-direction:column;gap:10px}
@@ -258,7 +260,7 @@ body[data-quality="lite"] .panel,body[data-quality="low"] .panel,body[data-quali
 
 <div class="brand panel hud"><img class="mark" id="brandLogo" alt="Linn"><div><b>Linn IT Mall</b><span id="brandSub">Shop 1, Bogyoke Road, Pyinmana</span></div></div>
 <div class="where panel hud" aria-live="polite"><small>You are at</small><b id="where">Outside Shop 1</b></div>
-<div class="tools hud"><button id="langBtn" type="button" title="Language / ဘာသာစကား">EN</button><button id="findBtn" type="button">🔍 <span class="lbl">Find</span></button><button id="liteBtn" type="button" title="Graphics quality">HD</button><button id="statsBtn" class="hidden" type="button" title="Visitor stats">📊</button><button id="onlineBtn" class="online hidden" type="button" title="Guests here now">👥 <span id="onlineN">1</span></button><button id="setupBtn" class="hidden" type="button">Set up 3D assets</button><button id="festBtn" type="button" title="Thadingyut festival night">🏮 <span class="lbl">Night</span></button><button id="fsBtn" type="button" title="Full screen">⛶</button><button id="music" aria-pressed="true"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl">Music</span></button><details id="moreTools" class="more-tools" hidden><summary aria-label="More controls">⋯</summary><div id="toolExtras"></div></details></div>
+<div class="tools hud"><button id="langBtn" type="button" title="Language / ဘာသာစကား">EN</button><button id="findBtn" type="button">🔍 <span class="lbl">Find</span></button><button id="liteBtn" type="button" title="Graphics quality">HD</button><button id="statsBtn" class="hidden" type="button" title="Visitor stats">📊</button><button id="onlineBtn" class="online hidden" type="button" title="Guests here now">👥 <span id="onlineN">1</span></button><button id="setupBtn" class="hidden" type="button">Set up 3D assets</button><button id="festBtn" type="button" title="Thadingyut festival night">🏮 <span class="lbl">Night</span></button><button id="fsBtn" type="button" title="Full screen">⛶</button><button id="music" aria-pressed="true"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span class="lbl">Music</span></button><button id="nextTrack" type="button" title="Next song" aria-label="Next song">⏭ <span class="lbl">Skip song</span></button><span id="musicStatus" class="sr-only" role="status"></span><details id="moreTools" class="more-tools" hidden><summary aria-label="More controls">⋯</summary><div id="toolExtras"></div></details></div>
 <div class="help panel hud" id="help"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or arrows to walk, <kbd>Shift</kbd> to run<br>Drag to look around<br><kbd>E</kbd> to shop, ride or ask staff · <kbd>C</kbd> to sit<br><kbd>Enter</kbd> to chat with other guests · <kbd>M</kbd> map</div>
 <div class="chat panel hud hidden" id="chat"><button type="button" id="chatClose" aria-label="Close chat">✕</button><div class="log" id="chatLog" aria-live="polite"></div><input id="chatInput" maxlength="160" placeholder="Say something… (Enter)" autocomplete="off"></div>
 <div class="prompt panel hud" id="prompt"><span id="promptText"></span><span id="promptBtns" class="pbtns"></span></div>
@@ -345,6 +347,10 @@ body[data-quality="lite"] .panel,body[data-quality="low"] .panel,body[data-quali
     <div class="grp"><label for="name">Your name</label><input id="name" maxlength="14" placeholder="Guest" autocomplete="off"></div>
     <div class="grp"><p>Character</p><div class="seg" id="sex"><button type="button" data-v="m" aria-pressed="true">Male</button><button type="button" data-v="f" aria-pressed="false">Female</button></div></div>
     <div class="grp"><p>Look</p><div class="seg" id="look"><button type="button" data-v="real" aria-pressed="true">Realistic 3D</button><button type="button" data-v="custom" aria-pressed="false">Custom</button></div><p class="note" id="lookNote"></p></div>
+    <div id="realClothesWrap">
+      <div class="grp"><p>အင်္ကျီအရောင် · Shirt colour</p><div class="sw" id="real-topColor"></div></div>
+      <div class="grp"><p>အောက်ပိုင်းအရောင် · Trousers / skirt colour</p><div class="sw" id="real-bottomColor"></div></div>
+    </div>
     <div class="tabs" role="tablist" id="customTabs"><button type="button" role="tab" aria-selected="true" data-t="outfit">Outfit</button><button type="button" role="tab" aria-selected="false" data-t="face">Face &amp; hair</button></div>
     <div id="customWrap"><div id="tab-outfit">
       <div class="grp"><p>Top</p><div class="chips" id="o-top"></div></div>
@@ -372,6 +378,9 @@ body[data-quality="lite"] .panel,body[data-quality="low"] .panel,body[data-quali
 <script type="module">
 import { advanceCar, findCarContact, boxContact, CAR_HULL, drivingSpeed } from './lib/driving.js';
 import { initialQuality, renderBudget, lowerQuality } from './lib/quality.js';
+import { parkingFor } from './lib/parking.js';
+import { dressAvatar, clothingColors } from './lib/clothing.js';
+import { createPlaylist } from './lib/playlist.js';
 (() => {
 const SHOP_URL = "https://shop.linn.com.mm/";
 const STANDEE = "assets/mall-standee-b84e6530.jpg";
@@ -383,7 +392,7 @@ let QUALITY=initialQuality({touch:isTouch,memory:navigator.deviceMemory,cores:na
 let LITE=QUALITY!=="hd", contextLost=false;
 function layoutTools(){
   const compact=innerWidth<=1024||isTouch, extra=$("toolExtras"), menu=$("moreTools"), tools=$("langBtn").parentElement;
-  for(const id of ["accountBtn","findBtn","statsBtn","setupBtn","festBtn","fsBtn","music"]){ const el=$(id); if(el) (compact?extra:tools).append(el); }
+  for(const id of ["accountBtn","findBtn","statsBtn","setupBtn","festBtn","fsBtn","music","nextTrack"]){ const el=$(id); if(el) (compact?extra:tools).append(el); }
   menu.hidden=!compact;
 }
 layoutTools();
@@ -594,7 +603,6 @@ const SLOTS=[
   ["staff_m","Staff, male","3D model (.glb)","glb"],["staff_f","Staff, female","3D model (.glb)","glb"],
   ["poster1","Poster: New Arrival","Image","img"],["poster2","Poster: Laptops","Image","img"],
   ["muralTV","Wall: TV & Home Entertainment","Wide image","img"],["muralHome","Wall: Home Appliances","Wide image","img"],
-  ["npc_m","Shopper: young man","3D model (.glb)","glb"],["npc_f","Shopper: woman in htamein","3D model (.glb)","glb"],["npc_o","Shopper: man in longyi","3D model (.glb)","glb"],
   ["car_body","Car body","3D model (.glb)","glb"],["bike_body","Motorbike","3D model (.glb)","glb"],
 ];
 const ASSET_IDS={}; const GLB={}; const IMG_TARGETS={};
@@ -748,12 +756,13 @@ function glbModel(slot){
   };
   return c;
 }
-function makeGlbAvatar(slot,name){
+function makeGlbAvatar(slot,name,colors){
   const g=new THREE.Group(); const m=glbModel(slot); g.add(m.wrap);
+  const clothes=slot.startsWith("guest_")?dressAvatar(THREE,m.model,slot.endsWith("f")?"f":"m",colors):null;
   const sd=new THREE.Mesh(new THREE.PlaneGeometry(0.9,0.9),shadowMat); sd.rotation.x=-Math.PI/2; sd.position.y=0.015; g.add(sd);
   if(name){ const tag=textSprite([name],{depth:false,h:70}); tag.position.y=(slot.endsWith("f")?1.62:1.74)+0.3; g.add(tag); }
   scene.add(g);
-  return {g,glb:true,m,
+  return {g,glb:true,m,setClothingColors:colors=>clothes?.setColors(colors),dispose:()=>clothes?.dispose(),
     pose(phase,moving,t,run){ m.moving=moving; m.speed=run?1.75:1.05; },
     tick(dt){ m.update(dt,performance.now()/1000); } };
 }
@@ -764,10 +773,10 @@ function staticModel(slot){ const src=GLB[slot], fx=VEH_FIX[slot]; const m=src.s
   const k=fx.len/Math.max(size.x,size.z); inner.scale.setScalar(k); inner.updateMatrixWorld(true); const b2=new THREE.Box3().setFromObject(inner);
   inner.position.set(-(b2.min.x+b2.max.x)/2,-b2.min.y,-(b2.min.z+b2.max.z)/2); return wrap; }
 function onGlbReady(slot){
-  if(slot.startsWith("npc")) rebuildNpcs();
   if(slot==="car_body"){ if(CAR) CAR.useModel(staticModel("car_body")); for(const v of TRAFFIC) v.useModel&&v.useModel(); }
   if(slot==="bike_body"){ for(const b of BIKES) b.useModel(); }
-  if(slot.startsWith("guest")){ updateLookNote(); if(!state.started||(GUEST.look==="real")) rebuildGuest(); }
+  if(slot.startsWith("guest")){ updateLookNote(); if(!state.started||(GUEST.look==="real")) rebuildGuest();
+    for(const rec of NET.peers.values()) if(rec.pr?.l==="real"&&"guest_"+rec.pr.s===slot&&!rec.pr.staff){ rec.key=null; peerAvatar(rec,rec.pr); } }
   if(slot.startsWith("staff")) for(const s of STAFF){ if(("staff_"+s.o.sex)!==slot) continue; if(s.glb) s.h.g.remove(s.glb.wrap);
     s.glb=glbModel(slot); s.h.g.add(s.glb.wrap); s.h.body.visible=false; }
 }
@@ -792,10 +801,10 @@ async function uploadSlot(k,file,inp){
 }
 const DEFAULT_ASSETS={guest_m:"e67927ac3e83df2480be24f848efcc80",guest_f:"36a1e18472d8c45f4497d407496ce309",staff_m:"d272ebe3b8951e27f1ed9d570a5de0ba",staff_f:"c2009bfb40375400fb333821c78256ab",
   poster1:"86fced55008abec2ebec852e2c0c3c8a",muralTV:"989ae4315e356221d56034acbd7c07cb",muralHome:"ddf9f46dabc600bf4a904a9d640b11b2",
-  npc_m:"a8ed09ac867bd5067c09058b6d6d2f1a",npc_f:"0ed7cc00d617d0007b13961b488ab304",npc_o:"2c958481ce439dd464e062a607b2e19a",car_body:"bf2b31138153618c47cc66caef74ea12",bike_body:"3cfff40165567cfd2f99421b2a3385aa"};
+  car_body:"bf2b31138153618c47cc66caef74ea12",bike_body:"3cfff40165567cfd2f99421b2a3385aa"};
 // start downloading the guest models straight away, while the store is still being built
 const STATIC_ASSETS={guest_m:"assets/guest_m.glb",guest_f:"assets/guest_f.glb",staff_m:"assets/staff_m.glb",staff_f:"assets/staff_f.glb",
-  npc_m:"assets/npc_m.glb",npc_f:"assets/npc_f.glb",npc_o:"assets/npc_o.glb",car_body:"assets/car_body.glb",bike_body:"assets/bike_body.glb",
+  car_body:"assets/car_body.glb",bike_body:"assets/bike_body.glb",
   poster1:"assets/poster1.jpg",muralTV:"assets/muralTV.jpg",muralHome:"assets/muralHome.jpg"};
 { const A=IN_CLAUDE?DEFAULT_ASSETS:STATIC_ASSETS; glbBuffer(A.guest_m).catch(()=>{}); glbBuffer(A.guest_f).catch(()=>{}); }
 async function initAssets(){
@@ -808,9 +817,9 @@ async function initAssets(){
   const first="guest_"+GUEST.sex;
   for(const k of ["poster1","muralTV","muralHome","poster2"]) if(ids[k]) applySlot(k,ids[k]);
   if(ids[first]) await applySlot(first,ids[first]);   // the visitor's own character first
-  // Parse models sequentially; low-memory mode keeps background characters procedural.
-  for(const k of ["guest_m","guest_f","car_body","staff_m","staff_f","npc_m","npc_f","npc_o","bike_body"]){
-    if(k===first||!ids[k]||(QUALITY==="low"&&/^(npc|staff)_/.test(k))) continue;
+  // Parse models sequentially; low-memory mode keeps staff characters procedural.
+  for(const k of ["guest_m","guest_f","car_body","staff_m","staff_f","bike_body"]){
+    if(k===first||!ids[k]||(QUALITY==="low"&&/^staff_/.test(k))) continue;
     await applySlot(k,ids[k]); await new Promise(resolve=>setTimeout(resolve,0));
   }
   if(window.claude&&window.claude.use){ try{ assetsApi=await window.claude.use("assets"); }catch(e){}
@@ -880,12 +889,12 @@ function buildWorld(){
   scooter(-5.5,3.2,0.3); scooter(11,3.4,-0.2); scooter(12.6,3.1,0.1);
   robot=buildRobot(7.6,2.0,-0.25); block(7.1,8.1,1.5,2.5,0);
 
-  buildCorners(); buildLift(0,0,2,1); buildStaff(); buildShop3(); buildRoute(); buildCar();
+  buildCorners(); buildLift(0,0,2,1); buildStaff(); buildShop3(); buildRoute(); buildParking(); buildCar();
   adScreen(1,0,4,-9.4,0); adScreen(3,0,3,-9.4,0); adScreen(1,1,2.6,-9.4,0); adScreen(3,1,3,-9.6,0);
   [[1,0,-2,-8],[1,0,10.5,-14],[1,0,-13.5,-6],[1,1,1,-16],[1,1,13,-8],[1,1,-10,-14],
    [3,0,-1,-8],[3,0,12,-12],[3,0,-12,-9],[3,1,4,-12],[3,1,-14,-16],[3,2,12.45,-18.2]].forEach(a=>couponAt(...a));
   applyQuality(QUALITY);
-  buildNpcs(); buildTraffic(); buildFestival();
+  buildTraffic(); buildFestival();
 }
 function towerTex(){
   return canvasTex(512,634,(g,W,H)=>{
@@ -1326,7 +1335,7 @@ function buildShop3(){
 /* ============ Road from Shop 1 to Shop 3 ============ */
 const ROUTE={};
 function buildRoute(){
-  const W=[[9,12.8],[-12,15.2],[-38,15.6],[-49,8],[-53,-12],[-52,-38],[-55,-62],[-64,-92],[-76,-122],[-82,-154],[-79,-186],[-73,-206],[-70,-219],[-62,-226.4],[-51,-227.2]];
+  const W=[[PARK[1].x,PARK[1].z],[29,12.8],[9,12.8],[-12,15.2],[-38,15.6],[-49,8],[-53,-12],[-52,-38],[-55,-62],[-64,-92],[-76,-122],[-82,-154],[-79,-186],[-73,-206],[-70,-219],[-62,-226.4],[-51,-227.2],[-31,-227.2],[PARK[3].x,PARK[3].z]];
   const curve=new THREE.CatmullRomCurve3(W.map(([x,z])=>new THREE.Vector3(x,0,z)),false,"centripetal");
   ROUTE.curve=curve; ROUTE.len=curve.getLength();
   const N=520, pts=curve.getSpacedPoints(N);
@@ -1372,7 +1381,23 @@ function buildRoute(){
 
 /* ============ Linn car ============ */
 let CAR=null;
-const PARK={1:{x:9,z:12.8,rot:-Math.PI/2,exit:[9,10.4]},3:{x:-51,z:-227.2,rot:Math.PI/2,exit:[-51,-229.6]}};
+const PARK=Object.fromEntries(Object.entries(SITES).map(([id,site])=>[id,parkingFor(site)]));
+function buildParking(){
+  for(const [id,P] of Object.entries(PARK)){
+    const S=SITES[id],center=S.ox+32.6;
+    B(center,.081,S.oz+6.7,11.6,.015,5.8,0x627079);
+    for(let i=0;i<=3;i++) B(S.ox+27.2+i*3.6,.104,S.oz+6.7,.075,.008,5.6,0xf2f5e9);
+    B(center,.104,S.oz+3.9,10.8,.008,.075,0xf2f5e9);
+    P.bays.forEach((bay,i)=>{
+      const number=plane(sign(String(i+1),"#627079","#ffffff",null,128,128),.55,.55,bay.x,.115,bay.z+1.65);
+      number.rotation.x=-Math.PI/2;
+      B(bay.x,.10,S.oz+4.1,1.5,.11,.13,0xe1ca69);
+    });
+    B(S.ox+39.5,.08,S.oz+7.4,.10,2.7,.10,0x586674);
+    plane(sign("P  PARKING","#1746C9","#ffffff","Customer parking",512,220),2.8,1.2,S.ox+39.5,2.45,S.oz+7.48);
+    corner("parking","Customer parking",0,S.ox+25.9,S.oz+5.5,"Marked bays · Linn car",{site:Number(id),acts:[{l:"Find Linn car",run:()=>{setNav(CAR.corn);toast("Follow the arrow to the Linn car");}}]});
+  }
+}
 function paintTex(hex){ // glossy look: a soft horizon reflection band painted into the body colour
   const c=new THREE.Color(hex), top=c.clone().lerp(new THREE.Color(0xffffff),0.35), mid=c.clone().lerp(new THREE.Color(0xffffff),0.08), low=c.clone().multiplyScalar(0.55);
   return canvasTex(8,256,(g,W,H)=>{ const gr=g.createLinearGradient(0,0,0,H); gr.addColorStop(0,"#"+top.getHexString()); gr.addColorStop(0.42,"#"+mid.getHexString()); gr.addColorStop(0.47,"#"+top.getHexString()); gr.addColorStop(0.52,"#"+low.getHexString()); gr.addColorStop(1,"#"+c.getHexString()); g.fillStyle=gr; g.fillRect(0,0,W,H); });
@@ -1446,7 +1471,9 @@ function buildCar(){
     spin(d){ for(const w of wheels) w.spin.rotation.x+=d/0.38; }, steer(a){ for(const w of wheels) if(w.front) w.pivot.rotation.y=a; },
     hover(k,T){ for(const w of wheels){ w.pivot.rotation.z=w.side*k*Math.PI/2; if(cm.model) w.pivot.visible=k>0.02; } cm.glowM.opacity=k*(0.55+Math.sin(T*40)*0.12); cm.thrust.forEach(m=>m.visible=k>0.02); cm.shadow.position.y=0.02-g.position.y; },
     park(site){ const P=PARK[site]; this.site=site; g.position.set(P.x,0,P.z); g.rotation.set(0,P.rot,0); this.hover(0,0);
-      Object.assign(this.blockRef,{x1:P.x-2.4,x2:P.x+2.4,z1:P.z-1.1,z2:P.z+1.1,site});
+      const halfX=Math.abs(Math.sin(P.rot))*CAR_HULL.halfLength+Math.abs(Math.cos(P.rot))*CAR_HULL.halfWidth;
+      const halfZ=Math.abs(Math.cos(P.rot))*CAR_HULL.halfLength+Math.abs(Math.sin(P.rot))*CAR_HULL.halfWidth;
+      Object.assign(this.blockRef,{x1:P.x-halfX,x2:P.x+halfX,z1:P.z-halfZ,z2:P.z+halfZ,site});
       Object.assign(this.corn,{site,x:P.exit[0],z:P.exit[1],name:site===1?"Linn car · drive to Shop 3 (Paung Laung)":"Linn car · drive back to Shop 1 (Bogyoke Rd)"}); },
     idle(){} };
   CAR.park(1);
@@ -1564,7 +1591,9 @@ function updateManual(dt){
   const P=PARK[D.to], dist=Math.hypot(P.x-D.x,P.z-D.z);
   const tgt=dist<30?P:ROUTE.pts200[Math.max(0,Math.min(200,bu+(D.to===3?8:-8)))];
   navArrow.position.set(D.x,D.y+3.4+Math.sin(performance.now()/300)*0.15,D.z); navArrow.rotation.y=Math.atan2(tgt.x-D.x,tgt.z-D.z);
-  D.canPark=dist<11&&D.y<0.2;
+  D.parkSite=null;
+  if(D.y<.2&&Math.abs(D.speed)<1.5){for(const [id,park] of Object.entries(PARK))if(Math.hypot(park.x-D.x,park.z-D.z)<3.2)D.parkSite=Number(id);}
+  D.canPark=!!D.parkSite;
   const key=[D.label,Math.round(Math.abs(D.speed)*3.6),Math.round(dist),Math.round(D.y),D.canPark,D.fly].join("|");
   if(key!==D.hud){ D.hud=key;
     $("driveText").innerHTML=`${D.label} · <b>${Math.round(Math.abs(D.speed)*3.6)} km/h</b>${D.y>0.5?` · ✈ ${Math.round(D.y)} m`:""} · ${Math.round(dist)} m <button type="button" id="flyBtn">${D.fly?"Land (F)":"Fly (F)"}</button>${D.canPark?' <button type="button" id="parkBtn">Park here (E)</button>':""}`;
@@ -1576,12 +1605,12 @@ function toggleFly(){ const D=state.drive; if(!D||!D.manual) return;
   D.fly=false; toast("Landing…"); }
 function endDrive(){
   document.body.classList.remove("driving","flying");$("driveControls").classList.add("hidden");state.keys={};joyEnd();
-  const to=state.drive.to; state.drive=null; CAR.park(to); CAR.steer(0); if(navArrow) navArrow.visible=false; $("skipBtn").textContent="Skip ride";
+  const to=state.drive.parkSite||state.drive.to; state.drive=null; CAR.park(to); CAR.steer(0); if(navArrow) navArrow.visible=false; $("skipBtn").textContent="Skip ride";
   state.site=to; const P=PARK[to]; state.x=P.exit[0]; state.z=P.exit[1]; state.f=0; state.y=0; state.rot=Math.PI; state.yaw=0; state.pitch=0.25;
   camPos.set(state.x,3,state.z+7); $("drivebar").classList.add("hidden");
   toast(to===3?"Linn Shop 3 (Paung Laung) သို့ ရောက်ပါပြီ":"Linn Shop 1 (Bogyoke Road) သို့ ရောက်ပါပြီ");
 }
-$("skipBtn").onclick=()=>{ const D=state.drive; if(!D) return; if(D.manual){ endDrive(); return; } D.t=D.dur; };
+$("skipBtn").onclick=()=>{ const D=state.drive; if(!D) return; if(D.manual){ D.parkSite=null; endDrive(); return; } D.t=D.dur; };
 function driveCamera(dt){
   const yaw=CAR.g.rotation.y, fx=Math.sin(yaw), fz=Math.cos(yaw), cp=CAR.g.position, man=state.drive&&state.drive.manual, back=man?(cp.y>1?10:7.5):9;
   const shake=state.drive.shake||0, wobble=Math.sin(performance.now()*0.055)*shake;
@@ -1589,32 +1618,36 @@ function driveCamera(dt){
 }
 
 /* ============ Music ============ */
-const BGM_URL=(()=>{ const a=document.createElement("audio"); // background song: Opus/WebM where supported, AAC/MP4 otherwise (Safari)
-  const webm=a.canPlayType('audio/webm; codecs="opus"'), inC=!!(window.claude&&window.claude.use);
-  return inC?(webm?"/_blob/0ffea2e3f3a1551306bf8007cdc9479b":"/_blob/4e7d401883e2eaa012edb0ae756d25c0"):(webm?"assets/bgm.webm":"assets/bgm.mp4"); })();
-const Music=(()=>{ let ac,master,filter,mute,started=false,nextT=0,step=0,bus,padBus;
-  const midi=m=>440*Math.pow(2,(m-69)/12);
-  const CH=[[48,55,59,64],[45,52,55,60],[41,48,52,57],[43,50,55,62]], AR=[[72,76,79,83],[69,72,76,79],[69,72,77,81],[71,74,79,83]], ST=60/84/2;
-  function reverb(){ const len=ac.sampleRate*2.6,b=ac.createBuffer(2,len,ac.sampleRate); for(let c=0;c<2;c++){const d=b.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);} const cv=ac.createConvolver(); cv.buffer=b; return cv; }
-  function voice(type,f,t,a,dur,peak,dest,det=0){ const o=ac.createOscillator(),g=ac.createGain(); o.type=type; o.frequency.value=f; o.detune.value=det; g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+a); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(dest); o.start(t); o.stop(t+dur+0.05); }
-  function noise(t,peak,dest){ const n=ac.createBufferSource(),len=ac.sampleRate*0.06,b=ac.createBuffer(1,len,ac.sampleRate),d=b.getChannelData(0); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len); n.buffer=b; const hp=ac.createBiquadFilter(); hp.type="highpass"; hp.frequency.value=7000; const g=ac.createGain(); g.gain.value=peak; n.connect(hp); hp.connect(g); g.connect(dest); n.start(t); }
-  function sched(s,t){ const bar=Math.floor(s/8)%4,i=s%8;
-    if(i===0) CH[bar].forEach(n=>{ voice("triangle",midi(n),t,0.9,ST*8+1.2,0.05,padBus,-7); voice("sine",midi(n),t,0.9,ST*8+1.2,0.05,padBus,7); });
-    if(i===0||i===5) voice("sine",midi(CH[bar][0]-12),t,0.02,1.4,0.22,bus);
-    if(Math.random()<(i%2?0.55:0.85)) voice("sine",midi(AR[bar][(i*3+bar)%4]),t,0.008,0.9,0.07,bus);
-    if(i%2===1) noise(t,0.025,bus); }
-  function tick(){ while(nextT<ac.currentTime+0.3){ sched(step,nextT); nextT+=ST; step++; } }
-  return { start(){ if(started) return; started=true; ac=new (window.AudioContext||window.webkitAudioContext)();
-      mute=ac.createGain(); mute.connect(ac.destination); master=ac.createGain(); master.gain.value=0.0001;
-      filter=ac.createBiquadFilter(); filter.type="lowpass"; filter.frequency.value=700; filter.Q.value=0.4; master.connect(filter); filter.connect(mute);
-      bus=ac.createGain(); bus.connect(master); padBus=ac.createBiquadFilter(); padBus.type="lowpass"; padBus.frequency.value=1400; padBus.connect(master);
-      const rv=reverb(),wet=ac.createGain(); wet.gain.value=0.45; bus.connect(rv); padBus.connect(rv); rv.connect(wet); wet.connect(master);
-      const synth=()=>{ if(this._synth) return; this._synth=true; nextT=ac.currentTime+0.1; setInterval(tick,90); tick(); };
-      try{ const au=new Audio(BGM_URL); au.loop=true; au.preload="auto"; au.playsInline=true; this.audio=au;
-        ac.createMediaElementSource(au).connect(master); au.addEventListener("error",synth,{once:true}); au.play().catch(synth); }
-      catch(e){ synth(); } },
-    set(l){ if(!ac) return; const t=ac.currentTime; master.gain.setTargetAtTime((this.audio&&!this._synth?0.5:1)*(0.06+l*0.5),t,0.5); filter.frequency.setTargetAtTime(700+l*l*11000,t,0.5); },
-    toggle(on){ if(!ac) return; mute.gain.setTargetAtTime(on?1:0.0001,ac.currentTime,0.08); if(on&&ac.state!=="running") ac.resume(); if(this.audio){ if(on) this.audio.play().catch(()=>{}); else this.audio.pause(); } } };
+const Music=(()=>{
+  let ac,master,filter,playlist,audio;
+  function resume(){ if(ac&&ac.state!=="running") ac.resume().catch(()=>{}); }
+  return {
+    start(){
+      if(playlist) return;
+      audio=document.createElement("audio"); audio.id="mallAudio"; audio.hidden=true;
+      audio.setAttribute("playsinline",""); document.body.append(audio);
+      // Native playback remains available on devices without a working AudioContext.
+      try{
+        ac=new (window.AudioContext||window.webkitAudioContext)();
+        master=ac.createGain(); master.gain.value=.12;
+        filter=ac.createBiquadFilter(); filter.type="lowpass"; filter.frequency.value=700; filter.Q.value=.4;
+        ac.createMediaElementSource(audio).connect(master); master.connect(filter); filter.connect(ac.destination);
+        resume();
+      }catch(e){ master=null; filter=null; audio.volume=.12; }
+      playlist=createPlaylist(audio,undefined,({track,index,enabled,error})=>{
+        musicOn=enabled;
+        $("music").setAttribute("aria-pressed",enabled);
+        $("music").classList.toggle("muted-on",!enabled);
+        $("music").title=error||`${index+1}/3 · ${track.title}`;
+        $("nextTrack").title=`${track.title} · Next song / ကျော်ရန်`;
+        $("musicStatus").textContent=error||`${index+1}/3 · ${track.title}`;
+      });
+      playlist.start();
+    },
+    set(l){ const volume=.5*(.06+l*.5); if(master){ master.gain.setTargetAtTime(volume,ac.currentTime,.5); filter.frequency.setTargetAtTime(700+l*l*11000,ac.currentTime,.5); }else if(audio) audio.volume=volume; },
+    toggle(on){ if(!playlist) this.start(); if(on) resume(); playlist.toggle(on); },
+    next(){ if(!playlist) this.start(); resume(); playlist.next(); }
+  };
 })();
 
 /* ============ Guest character setup ============ */
@@ -1631,18 +1664,28 @@ const OPT={
 };
 const DEFAULTS={ m:{sex:"m",top:"shirt",topColor:0xf7f7f5,bottom:"pants",bottomColor:0x1a1d26,hair:"side",hairColor:0x141110,skin:SKINS[1],glasses:"square",hat:"none",watch:true},
                  f:{sex:"f",top:"shirt",topColor:0xf7f7f5,bottom:"skirt",bottomColor:0x1a1d26,hair:"long",hairColor:0x141110,skin:SKINS[0],glasses:"none",hat:"none",watch:true} };
-let GUEST={...DEFAULTS.m,look:"real"};
+let GUEST={...DEFAULTS.m,look:"real",realTopColor:null,realBottomColor:null};
+function realClothing(){ return clothingColors({topColor:GUEST.realTopColor,bottomColor:GUEST.realBottomColor}); }
 function updateLookNote(){ const slot="guest_"+GUEST.sex, ok=!!GLB[slot];
   $("lookNote").textContent= GUEST.look!=="real"||ok ? "" : (ASSET_IDS[slot] ? "Loading the 3D model…" : "The realistic model isn't set up yet, so you'll see the custom character for now."); }
 let avatar=null;
 function guestName(){ return ($("name").value.trim()||"Guest").slice(0,14); }
-function rebuildGuest(){ const keep=avatar?{p:avatar.g.position.clone(),r:avatar.g.rotation.y}:null; if(avatar) scene.remove(avatar.g);
+function rebuildGuest(){ const keep=avatar?{p:avatar.g.position.clone(),r:avatar.g.rotation.y}:null; if(avatar){ scene.remove(avatar.g); avatar.dispose?.(); }
   const slot="guest_"+GUEST.sex;
-  avatar = (GUEST.look==="real"&&GLB[slot]) ? makeGlbAvatar(slot,guestName()) : buildHuman({...GUEST,name:guestName(),isPlayer:true});
+  avatar = (GUEST.look==="real"&&GLB[slot]) ? makeGlbAvatar(slot,guestName(),realClothing()) : buildHuman({...GUEST,name:guestName(),isPlayer:true});
   if(keep){ avatar.g.position.copy(keep.p); avatar.g.rotation.y=keep.r; }
+  $("realClothesWrap").classList.toggle("hidden",GUEST.look!=="real");
   $("customWrap").classList.toggle("hidden",GUEST.look==="real"); $("customTabs").classList.toggle("hidden",GUEST.look==="real"); updateLookNote(); }
 $("look").querySelectorAll("button").forEach(b=>b.onclick=()=>{ GUEST.look=b.dataset.v; $("look").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); rebuildGuest(); });
 function renderOptions(){
+  for(const k of ["topColor","bottomColor"]){
+    const field=k==="topColor"?"realTopColor":"realBottomColor", el=$("real-"+k);
+    el.innerHTML=`<button type="button" class="original" data-c="" aria-pressed="${GUEST[field]===null}">မူလ · Original</button>`+
+      OPT[k].map((c,i)=>`<button type="button" aria-label="${k} ${i+1}" data-c="${c}" aria-pressed="${GUEST[field]===c}" style="background:#${c.toString(16).padStart(6,"0")}"></button>`).join("");
+    el.querySelectorAll("button").forEach(b=>b.onclick=()=>{ GUEST[field]=b.dataset.c===""?null:+b.dataset.c;
+      if(avatar?.setClothingColors) avatar.setClothingColors(realClothing());
+      NET.last=""; renderOptions(); });
+  }
   for(const k of ["top","bottom","hair","glasses","hat"]){ const el=$("o-"+k);
     el.innerHTML=OPT[k].filter(([v])=>!(k==="bottom"&&v==="skirt"&&GUEST.sex==="m")).map(([v,l])=>`<button type="button" data-v="${v}" aria-pressed="${GUEST[k]===v}">${l}</button>`).join("");
     el.querySelectorAll("button").forEach(b=>b.onclick=()=>{ GUEST[k]=b.dataset.v; renderOptions(); rebuildGuest(); }); }
@@ -1650,7 +1693,7 @@ function renderOptions(){
     el.innerHTML=OPT[k].map((c,i)=>`<button type="button" aria-label="${k} ${i+1}" data-c="${c}" aria-pressed="${GUEST[k]===c}" style="background:#${c.toString(16).padStart(6,"0")}"></button>`).join("");
     el.querySelectorAll("button").forEach(b=>b.onclick=()=>{ GUEST[k]=+b.dataset.c; renderOptions(); rebuildGuest(); }); }
 }
-$("sex").querySelectorAll("button").forEach(b=>b.onclick=()=>{ GUEST={...DEFAULTS[b.dataset.v],look:GUEST.look}; $("sex").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); renderOptions(); rebuildGuest(); });
+$("sex").querySelectorAll("button").forEach(b=>b.onclick=()=>{ GUEST={...DEFAULTS[b.dataset.v],look:GUEST.look,realTopColor:GUEST.realTopColor,realBottomColor:GUEST.realBottomColor}; $("sex").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); renderOptions(); rebuildGuest(); });
 document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{ document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected",x===b)); $("tab-outfit").classList.toggle("hidden",b.dataset.t!=="outfit"); $("tab-face").classList.toggle("hidden",b.dataset.t!=="face"); });
 let nameT; $("name").addEventListener("input",()=>{ clearTimeout(nameT); nameT=setTimeout(rebuildGuest,250); });
 $("name").addEventListener("keydown",e=>{ if(e.key==="Enter") $("go").click(); });
@@ -1736,7 +1779,8 @@ function renderPrompt(c){ $("promptText").textContent=c.name;
   $("promptBtns").innerHTML=actionsFor(c).map((a,i)=>`<button type="button" data-i="${i}">${a.l}${(!isTouch&&i===0&&actionsFor(c).length===1)?"  (E)":""}</button>`).join("");
   $("promptBtns").querySelectorAll("button").forEach(b=>b.onclick=()=>interact(+b.dataset.i)); }
 let toastT; function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("on"); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove("on"),2400); }
-let musicOn=true; $("music").onclick=()=>{ musicOn=!musicOn; $("music").setAttribute("aria-pressed",musicOn); $("music").classList.toggle("muted-on",!musicOn); Music.toggle(musicOn); };
+let musicOn=true; $("music").onclick=()=>Music.toggle(!musicOn);
+$("nextTrack").onclick=()=>{ Music.next(); toast($("musicStatus").textContent); };
 
 
 function setSit(av,on){ if(!av) return; if(av.glb){ av.m.sit=!!on; return; }
@@ -1749,12 +1793,12 @@ function addChat(name,text,sys,staff){ const log=$("chatLog"), d=document.create
 function sayBubble(av,text){ if(!av) return; if(av._say){ av.g.remove(av._say);av._say.material.map?.dispose();av._say.material.dispose(); }
   const s=textSprite([text.length>38?text.slice(0,37)+"…":text],{w:520,h:80,bg:"rgba(255,255,255,.96)",fg:"#0E2350",font:MMFONT}); s.position.y=2.45; av.g.add(s); av._say=s; av._sayT=6; }
 function peerAvatar(rec,pr){
-  const name=String(pr.n||"Guest").slice(0,14), sex=pr.s==="f"?"f":"m", key=[pr.l,sex,name,JSON.stringify(pr.c||{}),pr.staff?1:0].join("|");
-  if(rec.key===key&&rec.av) return; if(rec.av) scene.remove(rec.av.g);
+  const name=String(pr.n||"Guest").slice(0,14), sex=pr.s==="f"?"f":"m", key=[pr.l,sex,name,pr.l==="real"?"":JSON.stringify(pr.c||{}),pr.staff?1:0].join("|");
+  if(rec.key===key&&rec.av){ if(!pr.staff) rec.av.setClothingColors?.(pr.c); return; } if(rec.av){ scene.remove(rec.av.g); rec.av.dispose?.(); }
   const slot="guest_"+sex; rec.key=key;
   if(pr.staff){ const ss="staff_"+sex; rec.av=GLB[ss]?makeGlbAvatar(ss,null):buildHuman({...(sex==="f"?mkW:mkM)(name,0,0,0,0),name:null});
     const tag=textSprite([name,"Linn Staff · live"],{h:90,bg:"rgba(47,168,74,.92)",depth:false}); tag.position.y=2.15; rec.av.g.add(tag); }
-  else rec.av=(pr.l==="real"&&GLB[slot])?makeGlbAvatar(slot,name):buildHuman({...DEFAULTS[sex],...(pr.c||{}),sex,name});
+  else rec.av=(pr.l==="real"&&GLB[slot])?makeGlbAvatar(slot,name,pr.c):buildHuman({...DEFAULTS[sex],...(pr.c||{}),sex,name});
   rec.av.g.position.set(rec.x,rec.y,rec.z);
 }
 function upsertPeer(p){
@@ -1768,7 +1812,7 @@ function upsertPeer(p){
   if(pr.say&&typeof pr.say.t==="string"&&pr.say.at!==rec.sayAt){ if(rec.sayAt!==undefined||Date.now()-pr.say.at<8000){ const tx=pr.say.t.slice(0,160); addChat(rec.name,tx,false,!!pr.staff); sayBubble(rec.av,tx);
       if(DUTY.on&&/@staff|ဝန်ထမ်း/i.test(tx)){ beep(); toast(`🔔 ${rec.name}: ${tx.slice(0,60)}`); } } rec.sayAt=pr.say.at; }
 }
-function removePeer(id){ const rec=NET.peers.get(id); if(!rec) return; if(rec.av) scene.remove(rec.av.g); if(rec.car) scene.remove(rec.car.g); addChat("",`${rec.name||"A guest"} left`,true); NET.peers.delete(id); }
+function removePeer(id){ const rec=NET.peers.get(id); if(!rec) return; if(rec.av){ scene.remove(rec.av.g); rec.av.dispose?.(); } if(rec.car) scene.remove(rec.car.g); addChat("",`${rec.name||"A guest"} left`,true); NET.peers.delete(id); }
 async function initRoom(){
   let room=null;
   if(mallBackend){
@@ -1809,7 +1853,8 @@ function sendPresence(moving){
   if(!NET.room||!state.started) return; const now=performance.now(); if(now-NET.lastAt<100) return; NET.lastAt=now;
   const g=GUEST, o={n:guestName(),s:g.sex,l:g.look,site:state.site,f:state.f,x:+state.x.toFixed(2),y:+state.y.toFixed(2),z:+state.z.toFixed(2),r:+state.rot.toFixed(2),m:moving?1:0,d:state.drive?1:0,st:state.sit?1:0};
   if(state.drive){ o.x=+CAR.g.position.x.toFixed(2); o.y=+CAR.g.position.y.toFixed(2); o.z=+CAR.g.position.z.toFixed(2); o.r=+CAR.g.rotation.y.toFixed(2); }
-  if(g.look!=="real") o.c={top:g.top,topColor:g.topColor,bottom:g.bottom,bottomColor:g.bottomColor,hair:g.hair,hairColor:g.hairColor,skin:g.skin,glasses:g.glasses,hat:g.hat};
+  if(g.look==="real") o.c=realClothing();
+  else o.c={top:g.top,topColor:g.topColor,bottom:g.bottom,bottomColor:g.bottomColor,hair:g.hair,hairColor:g.hairColor,skin:g.skin,glasses:g.glasses,hat:g.hat};
   if(NET.mySay&&!mallBackend) o.say=NET.mySay; if(NET.myEmo) o.emo=NET.myEmo; if(DUTY.on&&(!mallBackend||NET.room.canStaff)){ o.staff=1; o.n=(DUTY.name||guestName()).slice(0,20); }
   const js=JSON.stringify(o); if(js===NET.last) return; NET.last=js; NET.room.presence(o).catch(()=>{ NET.last=""; });
 }
@@ -1981,7 +2026,7 @@ function placeList(q){ q=q.trim().toLowerCase(); const seen=new Set(), out=[];
     const prods=(PRODUCTS[c.id]||[]).map(p=>p.n).join(" "), hay=(c.name+" "+prods+" "+SITES[c.site].name).toLowerCase();
     if(q&&!hay.includes(q)) continue; seen.add(key);
     const hit=q?(PRODUCTS[c.id]||[]).find(p=>p.n.toLowerCase().includes(q)):null;
-    out.push({c,sub:`${SITES[c.site].name} · ${SITES[c.site].floors[c.floor].replace(/\s+/g," ")}${hit?" · "+hit.n:""}`}); }
+    out.push({c,sub:`${SITES[c.site].name} · ${c.id==="parking"||c.id==="car"?"Outside · Parking":SITES[c.site].floors[c.floor].replace(/\s+/g," ")}${hit?" · "+hit.n:""}`}); }
   out.sort((a,b)=>(a.c.site===state.site?0:1)-(b.c.site===state.site?0:1)||(a.c.floor===state.f?0:1)-(b.c.floor===state.f?0:1)); return out.slice(0,40); }
 function renderFind(){ const L=placeList($("findInput").value);
   $("findList").innerHTML=L.length?L.map((o,i)=>`<button type="button" data-i="${i}"><b>${esc(o.c.name)}</b><span>${esc(o.sub)}</span></button>`).join(""):'<p class="mm">ရှာမတွေ့ပါ · Nothing found</p>';
@@ -2066,7 +2111,6 @@ function drawFloor(g,W,H,site,f,full){
     if(!vert&&k.id!=="staff") hits.push({x,y,r:Math.max(14,r*2.5),target:k}); }
   for(const ch of CHAIRS) if(ch.site===site&&ch.f===f){ g.fillStyle=dark?"#4b6b8f":"#9fb6cf"; g.fillRect(X(ch.x)-2,Z(ch.z)-2,4,4); }
   for(const cp of COUPONS) if(!cp.got&&cp.site===site&&cp.f===f){ g.fillStyle="#f2b134"; g.fillRect(X(cp.x)-5,Z(cp.z)-3.5,10,7); }
-  for(const n of NPCS) if(n.site===site&&n.f===f){ g.fillStyle="#9aa3ad"; g.beginPath(); g.arc(X(n.x),Z(n.z),2.5,0,Math.PI*2); g.fill(); }
   for(const r of NET.peers.values()) if(r.pr&&r.pr.site===site&&r.pr.f===f){ g.fillStyle="#ff7a1a"; g.beginPath(); g.arc(X(r.x),Z(r.z),5,0,Math.PI*2); g.fill(); }
   g.fillStyle=dark?"#e7edfb":"#0E2350"; g.font=`700 ${full?24:20}px ${FONT}`; g.textAlign="left"; g.fillText(`${S.name} · ${S.floors[f].replace(/\s+/g," ")}`,12,full?32:24);
   return {X,Z,hits};
@@ -2146,41 +2190,6 @@ $("statsBtn").onclick=async()=>{ $("stats").classList.add("on"); state.shopping=
 $("statsClose").onclick=()=>{ $("stats").classList.remove("on"); state.shopping=false; };
 
 
-/* ============ Shoppers walking around (NPCs) ============ */
-const NPCS=[];
-const NPC_LOOKS=[
-  {sex:"m",top:"tee",topColor:0xcfd5dd,bottom:"jeans",bottomColor:0x2c3e66,hair:"short",hairColor:0x141110,skin:SKINS[1],glasses:"none",hat:"none"},
-  {sex:"f",top:"polo",topColor:0xf2a7c3,bottom:"skirt",bottomColor:0x6b2b3a,hair:"bun",hairColor:0x141110,skin:SKINS[0],glasses:"none",hat:"none"},
-  {sex:"m",top:"shirt",topColor:0xffffff,bottom:"pants",bottomColor:0x23402f,hair:"side",hairColor:0x5a5a5a,skin:SKINS[2],glasses:"square",hat:"none"},
-  {sex:"f",top:"tee",topColor:0xf2c14e,bottom:"jeans",bottomColor:0x3b5b8c,hair:"pony",hairColor:0x3a2418,skin:SKINS[1],glasses:"none",hat:"cap"},
-  {sex:"m",top:"hoodie",topColor:0x1f2937,bottom:"jeans",bottomColor:0x1a1d26,hair:"short",hairColor:0x141110,skin:SKINS[3],glasses:"sun",hat:"none"}];
-const NPC_SPOTS=[ // site, floor, count, area (local x0,x1,z0,z1)
-  [1,0,4,[-15,15,-17,-2]],[1,1,3,[-15,15,-17,-2]],[1,0,2,[-20,24,2,8]],
-  [3,0,4,[-15,15,-17,-2]],[3,1,3,[-15,15,-17,-2]],[3,2,2,[-15,15,-13,-2]],[3,0,2,[-20,24,2,8]]];
-function npcModel(i){ const slots=["npc_m","npc_f","npc_o"].filter(s=>GLB[s]);
-  if(QUALITY!=="low"&&slots.length&&i%5!==4) return makeGlbAvatar(slots[i%slots.length],null);
-  return buildHuman({...NPC_LOOKS[i%NPC_LOOKS.length]}); }
-function buildNpcs(){ let i=0;
-  for(const [site,f,n,area] of NPC_SPOTS) for(let k=0;k<(QUALITY==="low"?1:LITE?Math.ceil(n/2):n);k++,i++){
-    const S=SITES[site], npc={i,site,f,area,x:0,z:0,rot:Math.random()*6.28,tx:0,tz:0,wait:Math.random()*3,walk:0,av:null};
-    for(let tries=0;tries<40;tries++){ const x=S.ox+area[0]+Math.random()*(area[1]-area[0]), z=S.oz+area[2]+Math.random()*(area[3]-area[2]); if(!blocked(x,z,f,site)){ npc.x=npc.tx=x; npc.z=npc.tz=z; break; } }
-    npc.av=npcModel(i); npc.av.g.position.set(npc.x,f*F2,npc.z); NPCS.push(npc); } }
-function rebuildNpcs(){ for(const n of NPCS){ if(n.av) scene.remove(n.av.g); n.av=npcModel(n.i); n.av.g.position.set(n.x,n.f*F2,n.z); } }
-function npcTarget(n){ const S=SITES[n.site], a=n.area;
-  for(let tries=0;tries<20;tries++){ const x=S.ox+a[0]+Math.random()*(a[1]-a[0]), z=S.oz+a[2]+Math.random()*(a[3]-a[2]); if(!blocked(x,z,n.f,n.site)){ n.tx=x; n.tz=z; return; } } }
-function updateNpcs(dt,T){
-  for(const n of NPCS){ if(!n.av) continue; const far=n.site!==state.site||Math.abs(n.f-state.f)>1||Math.hypot(n.x-state.x,n.z-state.z)>(LITE?22:40);
-    n.av.g.visible=!far&&(QUALITY!=="low"||n.i%2===0); if(!n.av.g.visible) continue;
-    let moving=false;
-    if(n.wait>0){ n.wait-=dt; if(n.wait<=0) npcTarget(n); }
-    else { const dx=n.tx-n.x, dz=n.tz-n.z, d=Math.hypot(dx,dz);
-      if(d<0.3){ n.wait=2+Math.random()*5; }
-      else { const nearPlayer=state.f===n.f&&Math.hypot(state.x-n.x,state.z-n.z)<1.1;
-        if(!nearPlayer){ const sp=1.15*dt, nx=n.x+dx/d*sp, nz=n.z+dz/d*sp;
-          if(blocked(nx,nz,n.f,n.site)){ n.wait=0.5+Math.random(); } else { n.x=nx; n.z=nz; moving=true; let a=Math.atan2(dx,dz)-n.rot; a=Math.atan2(Math.sin(a),Math.cos(a)); n.rot+=a*Math.min(1,dt*6); } } } }
-    n.walk+=moving?dt*8:0; n.av.g.position.set(n.x,n.f*F2,n.z); n.av.g.rotation.y=n.rot; n.av.pose(n.walk,moving,T+n.i,false); if(n.av.tick) n.av.tick(dt); }
-}
-
 /* ============ Traffic: cars and motorbikes on the streets ============ */
 const TRAFFIC=[]; const CAR_COLORS=[0xd9dde3,0x1f2329,0x8e1b1b,0x2d4f7c,0xf2f2f2,0x5a5f66];
 function trafficCar(kind,opts){ let mesh, model=null;
@@ -2194,7 +2203,7 @@ function buildTraffic(){
   // along each shop's street
   for(const site of [1,3]){ const S=SITES[site]; for(let i=0;i<(LITE?2:3);i++) trafficCar("car",{street:site,x:S.ox-55+i*40,dir:i%2?1:-1,speed:9,z:S.oz+16+(i%2?-2.2:2.2)}); }
   // parked cars by the curb
-  for(const [x,z] of [[-14,12.6],[22,12.6],[-74,-227.4],[-36,-227.4]]){ const p=buildCarMesh(false,CAR_COLORS[(x*7|0)%CAR_COLORS.length|0]||0xd9dde3); p.g.position.set(x,0,z); p.g.rotation.y=Math.PI/2; scene.add(p.g);
+  for(const [x,z] of Object.values(PARK).flatMap(park=>park.bays.slice(1).map(bay=>[bay.x,bay.z]))){ const p=buildCarMesh(false,CAR_COLORS[(x*7|0)%CAR_COLORS.length|0]||0xd9dde3); p.g.position.set(x,0,z); p.g.rotation.y=0; scene.add(p.g);
     TRAFFIC.push({parked:true,mesh:p,useModel(){ if(GLB.car_body) p.useModel(staticModel("car_body")); }}); }
   TRAFFIC.forEach(v=>v.useModel&&v.useModel()); updateTraffic(0,0);
 }
@@ -2216,7 +2225,7 @@ function updateTraffic(dt,T){
   for(const v of TRAFFIC){ if(v.parked) continue; const g=v.mesh.g;
     let x,z,h,nextU,nextX;
     if(v.route){
-      nextU=(v.u+v.dir*v.speed*dt/ROUTE.len+1)%1;
+      nextU=.06+((v.u-.06+v.dir*v.speed*dt/ROUTE.len+.88)%.88);
       const p=ROUTE.curve.getPointAt(nextU), tg=ROUTE.curve.getTangentAt(nextU);
       // Lane offsets use the same route normal for BOTH travel directions.
       x=p.x-tg.z*v.lane; z=p.z+tg.x*v.lane;
@@ -2448,6 +2457,10 @@ function initAdmin(){
 /* ============ Myanmar localisation ============ */
 let LANG=(()=>{ try{ return localStorage.getItem("linnmall.lang")||"my"; }catch(e){ return "my"; } })();
 const MY={
+ "Outside · Parking":"အပြင်ဘက် · ကားရပ်ရန်",
+ "Customer parking":"ဝယ်သူများ ကားရပ်ရန်", "Marked bays · Linn car":"ကားရပ်ရန် လိုင်းများ · Linn ကား",
+ "Find Linn car":"Linn ကား ရှာရန်", "Follow the arrow to the Linn car":"Linn ကားဆီ မြှားအတိုင်း လိုက်သွားပါ",
+
  "Joystick to walk or drive · drag the scene to look around. Tap nearby actions to shop or enter the car. Use Brake to stop, and ↑ / ↓ while flying.":"Joystick နဲ့ လျှောက်ပါ၊ ကားမောင်းပါ။ ပတ်ဝန်းကျင်ကြည့်ရန် ပုံကို ဆွဲပါ။ အနီးက ခလုတ်များနဲ့ ဆိုင်ဝင်ခြင်း၊ ကားတက်ခြင်း လုပ်နိုင်ပါတယ်။ ဘရိတ်နဲ့ ရပ်ပါ။ ပျံနေချိန် ↑ / ↓ နဲ့ အမြင့်ပြောင်းပါ။",
  "Walk":"လမ်းလျှောက်","Overview":"အပေါ်စီး","Chat":"စကားပြော","Shops":"ဆိုင်များ","Help":"အကူအညီ",
  "Collision · slow down and reverse to recover":"တိုက်မိပါပြီ။ အရှိန်လျှော့ပြီး နောက်ဆုတ်ပါ။",
@@ -2473,7 +2486,7 @@ const MY={
  "Drag to turn your character":"ဆွဲပြီး character ကို လှည့်ကြည့်ပါ","Loading the 3D model…":"3D model ကို ဖွင့်နေပါတယ်…",
  "The realistic model isn't set up yet, so you'll see the custom character for now.":"တကယ့်လူပုံ model မရှိသေးလို့ ကိုယ်တိုင်ပြင်ဆင်ထားတဲ့ character ကို ပြပါမယ်။",
  // top bar & bottom bar
- "You are at":"ရောက်နေသည့်နေရာ","Find":"ရှာရန်","Music":"သီချင်း","Night":"ည","Day":"နေ့","⚙ Admin":"⚙ စီမံရန်",
+ "You are at":"ရောက်နေသည့်နေရာ","Find":"ရှာရန်","Music":"သီချင်း","Skip song":"ကျော်ရန်","Night":"ည","Day":"နေ့","⚙ Admin":"⚙ စီမံရန်",
  "🚶 Walk":"🚶 လမ်းလျှောက်","🗺 Overview":"🗺 အပေါ်စီး","💬 Chat":"💬 စကားပြော","🔍 Shops":"🔍 ဆိုင်များ","❔ Help":"❔ အကူအညီ",
  "or arrows to walk,":"သို့မဟုတ် မြှားခလုတ်ဖြင့် လမ်းလျှောက်၊","to run":"ပြေးရန်","Drag to look around":"ဆွဲ၍ ပတ်ပတ်လည် ကြည့်ရန်",
  "to shop, ride or ask staff ·":"ဝယ်ရန်၊ စီးရန်၊ ဝန်ထမ်းကို မေးရန် ·","to sit":"ထိုင်ရန်","to chat with other guests ·":"တခြား guest တွေနဲ့ စကားပြောရန် ·","map":"မြေပုံ",
@@ -2627,7 +2640,7 @@ function frame(timestamp=performance.now()){
   // robot
   if(robot){ robot.head.rotation.y=Math.sin(T*0.8)*0.35; robot.g.position.y=Math.abs(Math.sin(T*2))*0.03; robot.armR.rotation.z=2.4+Math.sin(T*6)*0.35; robot.armL.rotation.z=-0.15; }
   for(const L of LIFTS) updateLift(L);
-  updatePeers(dt,T); updateEmojis(avatar,dt); updateNpcs(dt,T); updateFestival(T); if(state.started){ sendPresence(moving); updateAds(T); updateCoupons(T); updateNav(T); drawMinimap(T); monitorFps(elapsed); flushStats(false); }
+  updatePeers(dt,T); updateEmojis(avatar,dt); updateFestival(T); if(state.started){ sendPresence(moving); updateAds(T); updateCoupons(T); updateNav(T); drawMinimap(T); monitorFps(elapsed); flushStats(false); }
   if(CAR) CAR.idle(T);
   if(ESCS.length) updateEscalators(T);
 
@@ -2659,7 +2672,7 @@ addEventListener("visibilitychange",()=>{state.keys={};joyEnd();clock.getDelta()
 
 $("go").onclick=()=>{
   rebuildGuest(); state.x=4; state.z=7; state.rot=Math.PI; state.yaw=0;
-  Music.start(); Music.toggle(true);
+  Music.start();
   $("gate").classList.add("hidden"); document.body.classList.remove("pre"); state.started=true;
   $("moreTools").open=false; camPos.set(4,3,13); toast("Walk to the glass door to go inside"); couponHud(); setTimeout(()=>$("help").classList.add("off"),20000);
   track(d=>{ d.sites[SITES[state.site].name]=(d.sites[SITES[state.site].name]||0)+1; });

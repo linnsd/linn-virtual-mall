@@ -109,6 +109,12 @@ Database setup `001_initial.sql` ပြီးသားဆိုရင် အဲ�
 
 Checks: `node --test tests/*.test.js`။ [realtime-rls.sql](tests/realtime-rls.sql) က empty disposable local PostgreSQL အတွက်ပဲ ဖြစ်ပြီး **Supabase project ထဲ မ run ပါနဲ့**။ Local fixture က Supabase auth/topic helper တွေကို အစားထိုးထားလို့ hosted Realtime service နဲ့ browser စမ်းသပ်မှုကို setup ပြီးမှ ဆက်လုပ်ရပါမယ်။
 
+## Parking
+
+ဆိုင်တစ်ဆိုင်စီရဲ့ ရှေ့ညာဘက်မှာ numbered parking bays ၃ ခုနဲ့ **P PARKING** ဆိုင်းဘုတ် ပါပါတယ်။ Linn ကားက ပထမ bay မှာ ရပ်ပြီး ကျန် bay နှစ်ခုမှာ parked cars ပါပါတယ်။ **Shops → Customer parking / Linn car** ကနေ directions ရှာနိုင်ပါတယ်။ Manual driving မှာ bay အနီး 3.2m အတွင်း၊ အမြင့် 0.2m အောက်၊ အရှိန် 1.5m/s အောက် ရောက်မှ **Park here** ပေါ်ပါတယ်။ မူလဆိုင်မှာလည်း ပြန်ရပ်ပြီး ဆင်းနိုင်ပါတယ်။
+
+Auto-drive route endpoints ကို parking bays နဲ့ ချိတ်ထားပြီး ကားမှဆင်းတဲ့ player position ကို hull အပြင်မှာ ထားပါတယ်။ ပုံမှန် traffic က parking endpoints ထဲ မဝင်ဘဲ main road ပေါ်မှာပဲ လှည့်ပတ်ပါတယ်။ Parking က local scene ပဲဖြစ်ပြီး reservation / တကယ့်ကားနေရာလွတ် စာရင်း မပါပါ။
+
 ## Driving collisions / mobile graphics
 
 - Manual driving မှာ ကား body အပြည့်ရဲ့ rotated hull နဲ့ နံရံ၊ သစ်ပင်၊ parked cars၊ traffic cars နဲ့ တခြား guest ကားတွေကို စစ်ပါတယ်။ Frame rate ကျတဲ့အခါ collision ကျော်မသွားဖို့ လှုပ်ရှားမှုကို အဆင့်ငယ်တွေနဲ့ တွက်ပါတယ်။ တိုက်မိရင် အရှိန်လျော့၊ အနည်းငယ် ပြန်ကန်/ဘေးတိုက်လျှောပြီး reverse နဲ့ ပြန်ထွက်နိုင်ပါတယ်။ Steering က အရှိန်မြင့်ရင် လျော့ပြီး braking / body lean / camera impact feedback ပါပါတယ်။
@@ -123,7 +129,7 @@ Graphics button ကို နှိပ်ပြီး **HD → Lite → Low** �
 | Lite | အများဆုံး 0.85 million pixels | 30 |
 | Low | အများဆုံး 0.42 million pixels | 30 |
 
-ဒီကိန်းတွေက render cap / target ပဲဖြစ်ပြီး ဖုန်းအားလုံးမှာ အဲဒီ FPS ရမယ်လို့ အာမခံတာ မဟုတ်ပါ။ Phone startup မှာ anti-aliasing ပိတ်၊ အဝေးက NPC/Staff တွေကို hide လုပ်၊ background model parsing ကို sequential လုပ်ထားပါတယ်။ Low startup မှာ NPC/Staff GLB တွေ မတင်ပါ။ UI blur လျှော့ပြီး tab background ရောက်ရင် render/update နားပါတယ်။ WebGL မရရင် online shop link ပြပြီး context ပျောက်ရင် Low graphics နဲ့ reload လုပ်နိုင်ပါတယ်။
+ဒီကိန်းတွေက render cap / target ပဲဖြစ်ပြီး ဖုန်းအားလုံးမှာ အဲဒီ FPS ရမယ်လို့ အာမခံတာ မဟုတ်ပါ။ Phone startup မှာ anti-aliasing ပိတ်၊ အဝေးက Staff တွေကို hide လုပ်၊ background model parsing ကို sequential လုပ်ထားပါတယ်။ Low startup မှာ NPC/Staff GLB တွေ မတင်ပါ။ UI blur လျှော့ပြီး tab background ရောက်ရင် render/update နားပါတယ်။ WebGL မရရင် online shop link ပြပြီး context ပျောက်ရင် Low graphics နဲ့ reload လုပ်နိုင်ပါတယ်။
 
 Logo / standee ပုံတွေကို HTML ထဲက base64 အစား content-hashed asset files အဖြစ် ခွဲထားလို့ browser က သီးခြား cache လုပ်နိုင်ပါတယ်။ Catalog / Admin setup ကလည်း 3D model အားလုံး loading ပြီးတဲ့အထိ မစောင့်တော့ပါ။
 
@@ -142,3 +148,13 @@ Validation: `node --test tests/*.test.js`။ Collision / reverse recovery / thin
 ## သတိပြုရန်
 - `api/ask.js` က ကိုယ့် API key ကို သုံးလို့ Anthropic Console မှာ လစဉ် အသုံးစရိတ် ကန့်သတ်ချက် (spend limit) သတ်မှတ်ထားပါ။
 - နောက်ခံသီချင်းကို public website မှာ သုံးဖို့ မူပိုင်ခွင့် ရှိမရှိ စစ်ပါ။
+
+### Realistic 3D အဝတ်အစားအရောင်
+- ဝင်ခါနီး Character setup ရှိ **တကယ့်လူပုံ 3D** မှာ အင်္ကျီနဲ့ ဘောင်းဘီ / စကတ် အရောင်ကို သီးခြားရွေးနိုင်ပါတယ်။ **မူလ · Original** နဲ့ တစ်ပိုင်းချင်း မူလ texture အရောင် ပြန်ထားနိုင်ပါတယ်။
+- ကျား/မ ပြောင်းရင် ရွေးထားတဲ့အရောင်တွေ ဆက်ရှိပြီး online guest တွေဆီလည်း realtime ပို့ပါတယ်။ SQL ထပ် run ဖို့ မလိုပါ။
+- လက်ရှိ bundled guest models ရဲ့ အဝတ်အစားနေရာအတွက် mask သုံးထားပါတယ်။ Guest GLB အသစ်အစားထိုးရင် model ရဲ့အဝတ်အစားနဲ့ mask ကို ပြန်စစ်ပါ။
+
+### Background music playlist
+- Mall ထဲဝင်ချိန် ပေးထားသော သီချင်း ၃ ပုဒ်ကို အစဉ်လိုက်ဖွင့်ပြီး နောက်ဆုံးပုဒ်ပြီးလျှင် ပထမပုဒ်ကနေ ပြန်ပတ်ပါတယ်။
+- **⏭ ကျော်ရန် / Skip song** ခလုတ်နဲ့ နောက်တစ်ပုဒ်ပြောင်းနိုင်ပါတယ်။ Mobile မှာ **⋯** menu ထဲကနေ သုံးနိုင်ပါတယ်။ **သီချင်း / Music** နဲ့ ပိတ်/ပြန်ဖွင့်နိုင်ပြီး ပိတ်ထားချိန် ကျော်လျှင် အသံပြန်မဖွင့်ပါ။
+- Playlist စာရင်းက `lib/playlist.js` ရဲ့ `MALL_TRACKS` ဖြစ်ပြီး audio files က `assets/music/` မှာရှိပါတယ်။ လက်ရှိပုဒ်ပဲ load လုပ်ပါတယ်။ ဖိုင်အသစ်အစားထိုးရင် immutable cache ကြောင့် filename version ကိုပါ ပြောင်းပါ။

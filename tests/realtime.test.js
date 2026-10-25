@@ -204,3 +204,17 @@ test('a peer that rejoins quickly waits for its previous SDK topic teardown', as
   assert.equal(cb.channels.filter(c=>c.topic===topic).length,2);assert.equal(b.peers().length,2);
   a.close();b.close();
 });
+
+
+test('realistic guests broadcast independent clothing colours and original resets', async () => {
+  const net=network(), ca=net.client(A), cb=net.client(B), a=net.make(ca,A,TA), b=net.make(cb,B,TB);
+  await tick();
+  const outfit={...state('Alice'),l:'real',c:{topColor:0xc8323a,bottomColor:0xb59a73}};
+  await a.presence(outfit);await b.presence(state('Bob'));await tick();
+  assert.deepEqual(b.peers().find(p=>!p.sameTab).presence.c,outfit.c);
+  net.advance(250);await a.presence({...outfit,c:{bottomColor:0}});
+  assert.deepEqual(b.peers().find(p=>!p.sameTab).presence.c,{bottomColor:0});
+  net.advance(250);await a.presence({...outfit,c:{}});
+  assert.deepEqual(b.peers().find(p=>!p.sameTab).presence.c,{});
+  a.close();b.close();
+});
