@@ -1,7 +1,11 @@
+import { createUuid } from '../lib/uuid.js';
+
 // Private, account-owned peer channels prevent forged sender IDs and staff badges.
 // The shared lobby is discovery only: never render a lobby payload as an avatar.
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const TOPIC = new RegExp(`^mall:(guest|staff):(${UUID}):(${UUID})$`);
+// Keep a conservative shared budget across all Presence channels on one socket.
+const presenceBudgets = new WeakMap();
 const EMOJIS = new Set(['👋', '❤️', '😂', '👍', '🎉', '😍', '🙏', '🔥', '😮']);
 export function normalizeState(input, staffAllowed = false) {
   if (!input || typeof input !== 'object' || !['x', 'y', 'z', 'r'].every(k => Number.isFinite(input[k]))) return null;
@@ -33,15 +37,69 @@ export async function connectMallRoom(client, options = {}) {
   return createMallRoom(client, { ...options, userId: data.session.user.id });
 }
 
-export function createMallRoom(client, { userId, staffAllowed = false, tabId = crypto.randomUUID(),
-  onStatus = () => {}, now = () => Date.now(), setIntervalFn = setInterval, clearIntervalFn = clearInterval } = {}) {
+export function createMallRoom(client, { userId, staffAllowed = false, tabId = createUuid(),
+  onStatus = () => {}, onDiagnostic = detail => console.warn("Mall realtime", detail), now = () => Date.now(), setIntervalFn = setInterval, clearIntervalFn = clearInterval } = {}) {
   if (!new RegExp(`^${UUID}$`).test(userId) || !new RegExp(`^${UUID}$`).test(tabId)) throw new Error('Invalid room identity');
   const ownTopic = `mall:${staffAllowed ? 'staff' : 'guest'}:${userId}:${tabId}`;
   const listeners = new Set(), chatListeners = new Set(), remotes = new Map();
   let closed = false, lobbyReady = false, ownReady = false, latest = null, lastMove = -Infinity, lastChat = -Infinity;
-  let announced = false, lastSnapshot = -Infinity, version = 0, authSubscription = null, pendingMove = false, snapshotBusy = false;
-  const options = { config: { private: true, broadcast: { ack: true, self: false }, presence: { key: tabId } } };
-  const own = client.channel(ownTopic, options), lobby = client.channel('mall:lobby', options);
+  let ownAnnounced = false, lobbyAnnounced = false, nextMembershipAttempt = -Infinity, version = 0, authSubscription = null, pendingMove = false, snapshotBusy = false;
+  const managers = new Set(), teardowns = new Map();
+  function releaseChannel(channel,topic) {
+    const pending=Promise.resolve(client.removeChannel(channel)).catch(error=>onDiagnostic({scope:'teardown',message:error.message}));
+    teardowns.set(topic,pending);
+    pending.then(()=>{if(teardowns.get(topic)===pending) teardowns.delete(topic);});
+    return pending;
+  }
+  // A server CLOSED removes the SDK channel from its socket. Build a fresh channel
+  // after teardown; a CLOSED channel does not automatically resubscribe itself.
+  function managedChannel(topic) {
+    const bindings = []; let current = null, callback, stopped = false, ready = false;
+    let retryAt = Infinity, attempts = 0, retiring = false, generation = 0;
+    const facade = {
+      get ready() { return ready; }, get generation() { return generation; },
+      on(type, filter, fn) { bindings.push([type, filter, fn]); return facade; },
+      subscribe(fn) { callback = fn; bind(); return facade; },
+      presenceState() { return current?.presenceState() || {}; },
+      async track(payload) { const channel=current; if(!ready||!channel) return 'error'; const result=await channel.track(payload); return channel===current&&ready?result:'error'; },
+      async send(payload) { const channel=current; if(!ready||!channel) return 'error'; const result=await channel.send(payload); return channel===current&&ready?result:'error'; },
+      tick() {
+        if(stopped||retiring||now()<retryAt) return;
+        retiring=true; retryAt=Infinity; const previous=current; current=null;
+        releaseChannel(previous,topic).then(()=>{
+          retiring=false; if(!stopped) bind();
+        });
+      },
+      close() {
+        if(stopped) return; stopped=true; ready=false; managers.delete(facade);
+        if(current) releaseChannel(current,topic);
+        current=null;
+      },
+    };
+    async function bind() {
+      // Never reuse an SDK topic while its previous unsubscribe is still pending.
+      if(teardowns.has(topic)) await teardowns.get(topic);
+      if(stopped) return;
+      const channel=client.channel(topic,{config:{private:true,broadcast:{ack:true,self:false},presence:{key:tabId}}});
+      current=channel; generation++;
+      for(const [type,filter,fn] of bindings) channel.on(type,filter,payload=>{if(!stopped&&current===channel) fn(payload);});
+      channel.on('system',{event:'*'},payload=>{
+        if(payload?.status==='error') onDiagnostic({scope:topic==='mall:lobby'?'lobby':'peer',message:payload.message,extension:payload.extension});
+      });
+      channel.subscribe((status,error)=>{
+        if(stopped||current!==channel) return;
+        ready=status==='SUBSCRIBED';
+        if(ready){ attempts=0; retryAt=Infinity; }
+        else if(['CLOSED','CHANNEL_ERROR','TIMED_OUT'].includes(status)){
+          if(retryAt===Infinity) retryAt=now()+Math.min(30000,1000*2**attempts++);
+          onDiagnostic({scope:topic==='mall:lobby'?'lobby':'peer',status,message:error?.message});
+        }
+        callback?.(status);
+      });
+    }
+    managers.add(facade); return facade;
+  }
+  const own = managedChannel(ownTopic), lobby = managedChannel('mall:lobby');
   const online = () => !closed && lobbyReady && ownReady;
   const emit = change => { for (const fn of listeners) fn(change); };
   const send = async (channel, event, payload) => {
@@ -50,7 +108,7 @@ export function createMallRoom(client, { userId, staffAllowed = false, tabId = c
   };
   const remove = topic => {
     const rec = remotes.get(topic); if (!rec) return;
-    remotes.delete(topic); client.removeChannel(rec.channel);
+    remotes.delete(topic); rec.channel.close();
     if (rec.state) emit({ joined: [], updated: [], left: [{ peer: topic }] });
   };
   function accept(topic, input) {
@@ -70,7 +128,7 @@ export function createMallRoom(client, { userId, staffAllowed = false, tabId = c
     for (const topic of remotes.keys()) if (!topics.has(topic)) remove(topic);
     for (const topic of topics) {
       if (remotes.has(topic)) continue;
-      const channel = client.channel(topic, options);
+      const channel = managedChannel(topic);
       const rec = { channel, state: null, version: 0, staffAllowed: TOPIC.exec(topic)[1] === 'staff', seen: new Set(), lastChat: -Infinity };
       remotes.set(topic, rec);
       channel.on('presence', { event: 'sync' }, () => {
@@ -95,39 +153,59 @@ export function createMallRoom(client, { userId, staffAllowed = false, tabId = c
         });
     }
   }
-  async function publishSnapshot() {
-    if (!online() || !latest || snapshotBusy) return;
+  function reservePresence() {
+    const times=(presenceBudgets.get(client)||[]).filter(time=>now()-time<31000);
+    presenceBudgets.set(client,times);
+    if(times.length>=4) return false;
+    times.push(now()); return true;
+  }
+  async function publishMembership() {
+    if (!online() || !latest || snapshotBusy || now()<nextMembershipAttempt) return;
     snapshotBusy = true;
     try {
-      const result = await own.track({ state: latest });
-      if (result !== 'ok') throw new Error('Presence update failed');
-      lastSnapshot = now();
-      const advertised = await lobby.track({ topic: ownTopic });
-      if (advertised !== 'ok') throw new Error('Lobby update failed');
-      announced = true; onStatus('connected');
+      if(!ownAnnounced){
+        if(!reservePresence()) return;
+        const result=await own.track({state:latest});
+        if(result!=='ok') throw new Error('Presence join failed: '+result);
+        ownAnnounced=true;
+      }
+      if(!lobbyAnnounced){
+        if(!reservePresence()) return;
+        const result=await lobby.track({topic:ownTopic});
+        if(result!=='ok') throw new Error('Lobby join failed: '+result);
+        lobbyAnnounced=true;
+      }
+      if(!closed) onStatus('connected');
+    } catch(error) {
+      nextMembershipAttempt=now()+5000;
+      if(!closed){onDiagnostic({scope:'presence',message:error.message});onStatus('error');}
     } finally { snapshotBusy = false; }
   }
   function statusChanged() {
     if (closed) return;
     onStatus(online() ? 'connected' : 'reconnecting');
     if (!online()) {
-      announced = false;
       for (const topic of [...remotes.keys()]) remove(topic);
     } else {
-      publishSnapshot().catch(() => onStatus('error')); discover();
+      publishMembership(); discover();
     }
   }
-  own.subscribe(status => { ownReady = status === 'SUBSCRIBED'; statusChanged(); });
-  lobby.on('presence', { event: 'sync' }, discover).subscribe(status => { lobbyReady = status === 'SUBSCRIBED'; statusChanged(); });
+  own.subscribe(status => { ownReady = status === 'SUBSCRIBED'; if(!ownReady) ownAnnounced=false; statusChanged(); });
+  lobby.on('presence', { event: 'sync' }, discover).subscribe(status => { lobbyReady = status === 'SUBSCRIBED'; if(!lobbyReady) lobbyAnnounced=false; statusChanged(); });
   async function flushMovement() {
     if (!online() || !latest || !pendingMove || now() - lastMove < 200) return;
     lastMove = now(); pendingMove = false;
     try { await send(own, 'state', latest); }
     catch (error) { pendingMove = true; throw error; }
   }
-  // Slow Presence snapshots let late joiners see idle guests. Movement uses Broadcast.
+  // Presence is membership only. Idle Broadcast heartbeats update late joiners
+  // without triggering the server's per-client Presence rate limit.
   const timer = setIntervalFn(() => {
-    if (online() && latest && now() - lastSnapshot >= 5000) publishSnapshot().catch(() => onStatus('error'));
+    for(const channel of managers) channel.tick();
+    if(online()&&latest){
+      if(!ownAnnounced||!lobbyAnnounced) publishMembership();
+      if(now()-lastMove>=2000) pendingMove=true;
+    }
     flushMovement().catch(() => onStatus('error'));
   }, 200);
   const room = {
@@ -142,26 +220,30 @@ export function createMallRoom(client, { userId, staffAllowed = false, tabId = c
     onChat(fn) { chatListeners.add(fn); return () => chatListeners.delete(fn); },
     async presence(input) {
       const state = normalizeState(input, staffAllowed); if (!state) return;
-      const previous = latest; latest = { ...state, v: ++version }; pendingMove = true;
+      latest = { ...state, v: ++version }; pendingMove = true;
       if (!online()) return;
-      if (!announced || previous?.staff !== state.staff || previous?.n !== state.n) await publishSnapshot();
+      if (!ownAnnounced || !lobbyAnnounced) await publishMembership();
       await flushMovement();
     },
     async sendChat(text) {
       if (!online() || !latest) throw new Error('Chat is reconnecting. Please try again.');
       text = String(text).trim().slice(0, 160); if (!text) return;
       if (now() - lastChat < 1000) throw new Error('Please wait a second before sending again.');
-      lastChat = now(); await send(own, 'chat', { id: crypto.randomUUID(), text, state: latest });
+      lastChat = now(); await send(own, 'chat', { id: createUuid(), text, state: latest });
     },
     close() {
       if (closed) return;
       closed = true; clearIntervalFn(timer); authSubscription?.unsubscribe();
       for (const topic of [...remotes.keys()]) remove(topic);
-      client.removeChannel(own); client.removeChannel(lobby); listeners.clear(); chatListeners.clear();
+      own.close(); lobby.close(); listeners.clear(); chatListeners.clear();
     },
   };
   const { data } = client.auth.onAuthStateChange((_event, session) => {
     if (session?.user.id !== userId) { room.close(); onStatus('signed_out'); }
+    else if(_event==='TOKEN_REFRESHED') {
+      // Do not await Auth API work inside the auth state callback.
+      Promise.resolve().then(()=>client.realtime.setAuth(session.access_token)).catch(error=>onDiagnostic({scope:'auth',message:error.message}));
+    }
   });
   authSubscription = data.subscription;
   if (closed) authSubscription.unsubscribe();

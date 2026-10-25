@@ -5,7 +5,10 @@ export async function connectMall() {
   if (!response.ok) throw new Error('Supabase configuration unavailable');
   const config = await response.json();
   if (!window.supabase) throw new Error('Supabase SDK unavailable');
-  const client = window.supabase.createClient(config.url, config.publishableKey);
+  const client = window.supabase.createClient(config.url, config.publishableKey, {
+    // Keep socket heartbeats off the busy 3D render thread where workers exist.
+    realtime: { worker: typeof Worker !== 'undefined' },
+  });
   const { data, error } = await client.auth.getSession();
   if (error) throw error;
   if (!data.session) {

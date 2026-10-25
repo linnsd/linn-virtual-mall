@@ -6,21 +6,22 @@ const TA = '11111111-1111-4111-8111-111111111111', TB = '22222222-2222-4222-8222
 const tick = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
 const state = (n, staff=0) => ({ n, x:1, y:0, z:7, r:0, staff });
 // A network boundary fake routes channels and enforces the migration's topic ownership.
-function network() {
+function network({rateLimitPresence=false}={}) {
   const all = new Set(), timers = new Set(); let time=10000;
   function client(uid, staff=false) {
     const authListeners=new Set();
     return {
       auth: { onAuthStateChange(fn){authListeners.add(fn);return {data:{subscription:{unsubscribe(){authListeners.delete(fn);}}}};} },
       signOut(){for(const fn of authListeners) fn('SIGNED_OUT',null);},
-      channels: [],
+      refreshToken(token){for(const fn of authListeners) fn('TOKEN_REFRESHED',{user:{id:uid},access_token:token});},
+      channels: [], tracks: [],
       channel(topic,options) {
-        const events=[];
-        const c={topic,options,uid,staff,active:false,tracked:null,
+        const thisClient=this, events=[];
+        const c={topic,options,uid,staff,active:false,tracked:null,trackTimes:[],
           on(type,filter,fn){events.push({type,filter,fn});return c;},
           subscribe(fn){c.status=fn;all.add(c);c.active=true;queueMicrotask(()=>{fn('SUBSCRIBED'); sync(topic);});return c;},
           presenceState(){const result={};for(const peer of all) if(peer.active&&peer.topic===topic&&peer.tracked) (result[peer.options.config.presence.key]??=[]).push(peer.tracked);return result;},
-          async track(payload){if(!allowed(c,'presence')) return 'error';c.tracked=structuredClone(payload);sync(topic);return 'ok';},
+          async track(payload){if(!allowed(c,'presence')) return 'error';c.trackTimes=c.trackTimes.filter(at=>time-at<30000);if(rateLimitPresence&&c.trackTimes.length>=5){c.active=false;c.status('CLOSED');return 'error';}c.trackTimes.push(time);thisClient.tracks.push({time,topic});c.tracked=structuredClone(payload);sync(topic);return 'ok';},
           async send(message){if(!allowed(c,'broadcast')) return 'error';for(const peer of all) if(peer!==c&&peer.active&&peer.topic===topic) peer.emit('broadcast',message.event,{payload:structuredClone(message.payload)});return 'ok';},
           emit(type,event,arg){for(const item of events) if(item.type===type&&item.filter.event===event)item.fn(arg);},
         };
@@ -31,7 +32,7 @@ function network() {
   }
   function allowed(c,type){const parts=c.topic.split(':');return c.active&&(c.topic==='mall:lobby'?type==='presence':parts[2]===c.uid&&(parts[1]==='guest'||c.staff));}
   function sync(topic){for(const c of [...all])if(c.active&&c.topic===topic)c.emit('presence','sync',{});}
-  const make=(c,uid,tab,staffAllowed=false,statuses=[])=>createMallRoom(c,{userId:uid,tabId:tab,staffAllowed,onStatus:s=>statuses.push(s),now:()=>time,setIntervalFn:fn=>{timers.add(fn);return fn;},clearIntervalFn:fn=>timers.delete(fn)});
+  const make=(c,uid,tab,staffAllowed=false,statuses=[])=>createMallRoom(c,{userId:uid,tabId:tab,staffAllowed,onDiagnostic:()=>{},onStatus:s=>statuses.push(s),now:()=>time,setIntervalFn:fn=>{timers.add(fn);return fn;},clearIntervalFn:fn=>timers.delete(fn)});
   return {client,make,advance(ms){time+=ms;},pulse(){for(const fn of timers) fn();},all};
 }
 
@@ -127,4 +128,79 @@ test('missing or failed sessions never open private realtime channels', async ()
   client.auth.getSession=async()=>({data:{session:null},error:denied});
   await assert.rejects(connectMallRoom(client),error=>error===denied);
   assert.equal(client.channels.length,0);
+});
+
+
+test('two-minute movement and idle sessions stay below Presence limits and remain connected', async () => {
+  const net=network({rateLimitPresence:true}),ca=net.client(A),cb=net.client(B),a=net.make(ca,A,TA),b=net.make(cb,B,TB);
+  await tick();await a.presence(state('Alice'));await b.presence(state('Bob'));await tick();
+  for(let i=0;i<1200;i++){
+    net.advance(100);
+    if(i<600) await a.presence({...state('Alice'),x:i/100,m:1});
+    net.pulse();await tick();
+    assert.equal(a.connected,true);assert.equal(b.connected,true);assert.equal(b.peers().length,2);
+  }
+  assert.equal(ca.tracks.length,2,'Presence is announced once on peer and lobby, never used as a heartbeat');
+  assert.equal(cb.tracks.length,2);
+  a.close();b.close();
+});
+
+test('late joiners receive a stationary guest latest position via Broadcast, without another Presence track', async () => {
+  const net=network(),ca=net.client(A),a=net.make(ca,A,TA);
+  await tick();await a.presence(state('Alice'));net.advance(250);await a.presence({...state('Alice'),x:42});
+  const cb=net.client(B),b=net.make(cb,B,TB);await tick();await b.presence(state('Bob'));await tick();
+  net.advance(2100);net.pulse();await tick();
+  assert.equal(b.peers().find(p=>!p.sameTab).presence.x,42);
+  assert.equal(ca.tracks.length,2);a.close();b.close();
+});
+
+test('server CLOSED recreates the publisher and receiver channels and resumes movement', async () => {
+  const net=network(),ca=net.client(A),cb=net.client(B),a=net.make(ca,A,TA),b=net.make(cb,B,TB);
+  await tick();await a.presence(state('Alice'));await b.presence(state('Bob'));await tick();
+  const publisher=ca.channels.find(c=>c.topic.startsWith('mall:guest:'+A));
+  publisher.active=false;publisher.status('CLOSED');assert.equal(a.connected,false);
+  net.advance(1100);net.pulse();await tick();
+  assert.equal(a.connected,true);assert.ok(ca.channels.some(c=>c!==publisher&&c.topic===publisher.topic&&c.active));
+  await a.presence({...state('Alice'),x:12});await tick();
+  assert.equal(b.peers().find(p=>!p.sameTab).presence.x,12);
+  const receiver=cb.channels.find(c=>c.topic===publisher.topic&&c.active);
+  receiver.active=false;receiver.status('CLOSED');net.advance(1100);net.pulse();await tick();
+  assert.ok(cb.channels.some(c=>c!==receiver&&c.topic===receiver.topic&&c.active));
+  net.advance(250);await a.presence({...state('Alice'),x:18});await tick();
+  assert.equal(b.peers().find(p=>!p.sameTab).presence.x,18);a.close();b.close();
+});
+
+
+test('rapid server reconnects respect one shared Presence budget instead of flooding retries', async () => {
+  const net=network(),ca=net.client(A),a=net.make(ca,A,TA);
+  await tick();await a.presence(state('Alice'));await tick();
+  for(let i=0;i<6;i++){
+    const own=ca.channels.find(c=>c.active&&c.topic.startsWith('mall:guest:'+A));
+    own.active=false;own.status('CLOSED');net.advance(1100);net.pulse();await tick();
+  }
+  assert.ok(ca.tracks.length<=4);
+  net.advance(31000);net.pulse();await tick();
+  assert.equal(a.connected,true);assert.ok(ca.tracks.length>4);a.close();
+});
+
+test('token refresh updates private-channel authentication without recreating channels', async () => {
+  const net=network(),ca=net.client(A),a=net.make(ca,A,TA);await tick();
+  const tokens=[];ca.realtime={setAuth:async token=>tokens.push(token)};
+  const count=ca.channels.length;ca.refreshToken('refreshed-session-jwt');await tick();
+  assert.deepEqual(tokens,['refreshed-session-jwt']);assert.equal(ca.channels.length,count);assert.equal(a.connected,true);a.close();
+});
+
+
+test('a peer that rejoins quickly waits for its previous SDK topic teardown', async () => {
+  const net=network(),ca=net.client(A),cb=net.client(B),a=net.make(ca,A,TA),b=net.make(cb,B,TB);
+  await tick();await a.presence(state('Alice'));await b.presence(state('Bob'));await tick();
+  const topic=ca.channels.find(c=>c.topic.startsWith('mall:guest:'+A)).topic;
+  const remove=cb.removeChannel.bind(cb);let release;
+  cb.removeChannel=channel=>channel.topic===topic?new Promise(resolve=>{release=()=>{remove(channel);resolve('ok');};}):remove(channel);
+  const lobby=ca.channels.find(c=>c.topic==='mall:lobby');
+  await lobby.track({});await tick();await lobby.track({topic});await tick();
+  assert.equal(cb.channels.filter(c=>c.topic===topic).length,1,'do not bind a topic that is still leaving');
+  cb.removeChannel=remove;release();await tick();
+  assert.equal(cb.channels.filter(c=>c.topic===topic).length,2);assert.equal(b.peers().length,2);
+  a.close();b.close();
 });

@@ -86,13 +86,21 @@ Database setup `001_initial.sql` ပြီးသားဆိုရင် အဲ�
 - Duty ပိတ်ရင် badge ပြုတ်ရပါမယ်။ Staff tab ပိတ်ရင် offline ဖြစ်ရပါမယ်။ Refresh ပြန်လုပ်ရင် duty ကို ပြန်ဖွင့်ရပါမယ်။
 - Network ကို ခဏပိတ်ပြီး ပြန်ဖွင့်ပါ။ Online status က reconnect ပြပြီး connection ရတဲ့အခါ idle avatar ပါ ပြန်ပေါ်ရပါမယ်။ မချိတ်ဆက်သေးခင် chat ပို့မရပါ။
 
+### Online ပြုတ်ပြုတ်သွားရင်
+
+- ယခင် ၅ စက္ကန့်ခြား `track()` snapshot က live test မှာ စက္ကန့် ၃၀ ခန့်အကြာ `Client presence rate limit exceeded` ဖြစ်ပြီး peer channel ပိတ်သွားတာကို တွေ့ထားပါတယ်။ ယခု Presence ကို join/rejoin အတွက်သာသုံးပြီး moving / idle state ကို Broadcast နဲ့ ပို့ပါတယ်။
+- Unexpected `CLOSED` / `CHANNEL_ERROR` / `TIMED_OUT` မှာ ပိတ်သွားတဲ့ SDK channel ကို ဖယ်ရှားပြီး bounded backoff နဲ့ အသစ်ပြန်ဖွင့်ပါတယ်။ Retry Presence calls တွေကိုလည်း socket တစ်ခုလုံးအတွက် ၃၁ စက္ကန့်အတွင်း အများဆုံး ၄ ကြိမ်နဲ့ ကန့်ထားပါတယ်။
+- Token refresh ကို private channels ဆီ ပို့ပြီး worker ရနိုင်တဲ့ browser မှာ heartbeat ကို worker ကနေ ပို့ပါတယ်။ Mobile OS က tab/browser ကို suspend လုပ်ထားချိန် အမြဲ online ဖြစ်နေမယ်လို့တော့ အာမခံလို့ မရပါ။
+- Live validation မှာ guest နှစ်ယောက်ကို ၉၅ စက္ကန့်ကျော် movement/idle စမ်းပြီး online ဆက်ရှိနေပါတယ်။ Test channel ကို တမင်ပိတ်ပြီး ~၂ စက္ကန့်အတွင်း ပြန်ချိတ်နိုင်တာလည်း စမ်းထားပါတယ်။
+- Code update ပြီး browser tab အဟောင်းတွေကို ပိတ်ကာ ပြန်ဖွင့်ပါ။ SQL / Supabase rate-limit settings ပြောင်းစရာမလိုပါ။ Console မှာ `Mall realtime` diagnostics တွေက server error message ကို ပြပေးပြီး token / chat text မထည့်ပါ။
+
 ### Online count ၁ ပဲဖြစ်နေရင်
 
 ဒီ code မှာ private channel join မလုပ်ခင် `realtime.setAuth(session.access_token)` ကို await လုပ်ထားပါတယ်။ Local server ကို restart လုပ်ပြီး browser နှစ်ခုလုံး hard refresh လုပ်ပါ။ Guest နှစ်ယောက်လုံး **Enter Shop 1** နှိပ်ပြီး ဝင်ထားရပါမယ်။ SQL `003_realtime.sql` run ပြီးသားဆိုရင် ဒီ authentication fix အတွက် SQL ထပ် run ဖို့ မလိုပါ။
 
 ### Implementation / limits
 
-- Presence က online discovery နဲ့ ၅ စက္ကန့်ခြား avatar snapshot အတွက်ပါ။ လှုပ်ရှားမှုတွေကို အများဆုံး တစ်စက္ကန့် ၅ ကြိမ် Broadcast လုပ်ပြီး browser မှာ လှုပ်ရှားမှု ချောမွေ့အောင် ဖြည့်ပြပါတယ်။
+- Presence က online discovery / join အတွက်ပဲဖြစ်ပြီး timer နဲ့ ထပ်မပို့ပါ။ Idle avatar အတွက် ၂ စက္ကန့်ခြား Broadcast heartbeat သုံးပါတယ်။ လှုပ်ရှားမှုတွေကို အများဆုံး တစ်စက္ကန့် ၅ ကြိမ် Broadcast လုပ်ပြီး browser မှာ လှုပ်ရှားမှု ချောမွေ့အောင် ဖြည့်ပြပါတယ်။
 - Tab တစ်ခုချင်းစီအတွက် account ပိုင် private peer channel သုံးပါတယ်။ Lobby ထဲက နာမည်/Staff flag ကို မယုံဘဲ peer channel မှာ publish လုပ်ခွင့်ရှိသူကိုသာ render လုပ်ပါတယ်။ Staff channel မှာ စာပို့ခွင့်ကို SQL က role နဲ့စစ်ပါတယ်။
 - Permissions က channel join / token refresh မှာ စစ်တာပါ။ Role ပြောင်းပြီးရင် affected browser တွေကို sign out / sign in လုပ်ပါ။ Role revoke လုပ်တာက ရှိပြီးသား channel permissions ကို ချက်ချင်း မပိတ်နိုင်ပါ။
 - Shared lobby ဖြစ်လို့ local နဲ့ deployed site က project တူရင် တစ်ခန်းတည်းကို ဝင်ပါတယ်။ Online count က tab sessions အရေအတွက် ဖြစ်ပါတယ်။
@@ -100,6 +108,36 @@ Database setup `001_initial.sql` ပြီးသားဆိုရင် အဲ�
 - တခြား `realtime.messages` policies ရှိရင် mall topics မှာ ကျယ်ပြန့်တဲ့ write access ပေးမထားကြောင်း စစ်ပါ။ Permissive RLS policies တွေက OR နဲ့ ပေါင်းအလုပ်လုပ်ပါတယ်။
 
 Checks: `node --test tests/*.test.js`။ [realtime-rls.sql](tests/realtime-rls.sql) က empty disposable local PostgreSQL အတွက်ပဲ ဖြစ်ပြီး **Supabase project ထဲ မ run ပါနဲ့**။ Local fixture က Supabase auth/topic helper တွေကို အစားထိုးထားလို့ hosted Realtime service နဲ့ browser စမ်းသပ်မှုကို setup ပြီးမှ ဆက်လုပ်ရပါမယ်။
+
+## Driving collisions / mobile graphics
+
+- Manual driving မှာ ကား body အပြည့်ရဲ့ rotated hull နဲ့ နံရံ၊ သစ်ပင်၊ parked cars၊ traffic cars နဲ့ တခြား guest ကားတွေကို စစ်ပါတယ်။ Frame rate ကျတဲ့အခါ collision ကျော်မသွားဖို့ လှုပ်ရှားမှုကို အဆင့်ငယ်တွေနဲ့ တွက်ပါတယ်။ တိုက်မိရင် အရှိန်လျော့၊ အနည်းငယ် ပြန်ကန်/ဘေးတိုက်လျှောပြီး reverse နဲ့ ပြန်ထွက်နိုင်ပါတယ်။ Steering က အရှိန်မြင့်ရင် လျော့ပြီး braking / body lean / camera impact feedback ပါပါတယ်။
+- Traffic က ရှေ့ကားကို ရှောင်ရပ်ပြီး လမ်းကြောင်းသွား/ပြန် lane offsets ကို ပြင်ထားပါတယ်။ Auto drive ကလည်း ယာဉ်ရှေ့ပိတ်နေရင် စောင့်ပါတယ်။ Fly mode ကို ဆက်ထားပြီး အမြင့်ကွာရင် ground cars နဲ့ မတိုက်ပါ။
+- Physics က lightweight browser simulation ပါ။ Shared authoritative physics server မရှိလို့ multiplayer ကားတစ်စီးကို တခြားသူက တိုက်တွန်းရွှေ့တာ၊ vehicle damage / deformation တို့ မပါပါ။ Traffic simulation က client တစ်ခုချင်းစီမှာ သီးခြားပါ။
+
+Graphics button ကို နှိပ်ပြီး **HD → Lite → Low** ပြောင်းနိုင်ပါတယ်။ Touch device / ဖုန်း screen သေးရင် Lite နဲ့ စပြီး memory/core နည်းတဲ့ device သို့မဟုတ် Save Data ဖွင့်ထားရင် Low နဲ့ စပါတယ်။ FPS ကျနေရင် အလိုအလျောက် တစ်ဆင့် လျှော့ပါတယ်။
+
+| Mode | Drawing buffer budget | Target FPS |
+|---|---|---|
+| HD | အများဆုံး 2.6 million pixels | 60 |
+| Lite | အများဆုံး 0.85 million pixels | 30 |
+| Low | အများဆုံး 0.42 million pixels | 30 |
+
+ဒီကိန်းတွေက render cap / target ပဲဖြစ်ပြီး ဖုန်းအားလုံးမှာ အဲဒီ FPS ရမယ်လို့ အာမခံတာ မဟုတ်ပါ။ Phone startup မှာ anti-aliasing ပိတ်၊ အဝေးက NPC/Staff တွေကို hide လုပ်၊ background model parsing ကို sequential လုပ်ထားပါတယ်။ Low startup မှာ NPC/Staff GLB တွေ မတင်ပါ။ UI blur လျှော့ပြီး tab background ရောက်ရင် render/update နားပါတယ်။ WebGL မရရင် online shop link ပြပြီး context ပျောက်ရင် Low graphics နဲ့ reload လုပ်နိုင်ပါတယ်။
+
+Logo / standee ပုံတွေကို HTML ထဲက base64 အစား content-hashed asset files အဖြစ် ခွဲထားလို့ browser က သီးခြား cache လုပ်နိုင်ပါတယ်။ Catalog / Admin setup ကလည်း 3D model အားလုံး loading ပြီးတဲ့အထိ မစောင့်တော့ပါ။
+
+Mobile toolbar က **⋯** ထဲမှာ extra controls ထည့်ထားပြီး chat / reactions ကို လိုမှ ဖွင့်ပါတယ်။ Minimap အစား Map button သုံးပါ။ Joystick နဲ့ မောင်းပြီး **Brake** ကို ဖိထားရင် ရပ်နိုင်ပါတယ်။ Fly mode မှာ **↑ / ↓** နဲ့ အမြင့်ပြောင်းပါ။ LAN HTTP / browser အဟောင်းတွေမှာ `randomUUID` မရှိလည်း guest IDs ဆောက်နိုင်တဲ့ fallback ပါပါတယ်။ Safe areas၊ portrait/landscape နဲ့ keyboard ဖွင့်ချိန် layout ကို ထည့်ထားပါတယ်။
+
+Validation: `node --test tests/*.test.js`။ Collision / reverse recovery / thin-wall sweep / altitude / brake / render-budget regression tests ပါပါတယ်။ Browser resize simulation နဲ့ တကယ့် Android/iOS GPU performance စမ်းတာကို ခွဲသတ်မှတ်ပါ။ Device အဟောင်း၊ browser အဟောင်း၊ WebGL ပိတ်ထားတဲ့ ဖုန်းတိုင်းမှာ 3D ရမယ်လို့ မယူဆပါနဲ့။
+
+### ဆက်ဖြည့်သင့်သေးတာများ
+
+- `data/catalog.json` က လောလောဆယ် `{}` ဖြစ်ပြီး contact info တွေလည်း ဗလာပါ။ Admin က တကယ့် product/stock/contact ထည့်ဖို့လိုပါတယ်။ Sample repair job နဲ့ lucky draw reward တွေကို တကယ့်ဝန်ဆောင်မှုလို မသုံးသင့်သေးပါ။
+- Public chat အတွက် server-side spam/rate limiting၊ moderation၊ report/mute နဲ့ retention policy ဆက်ထည့်သင့်ပါတယ်။ Staff သီးသန့် conversation နဲ့ push notification လည်း မပါသေးပါ။
+- `api/ask.js` ရဲ့ rate limit က instance memory ပဲဖြစ်တာကြောင့် public traffic များလာရင် shared rate limiter / spend controls လိုပါတယ်။
+- Visitor stats က session-based ဖြစ်ပြီး last 7 days 1,000 rows cap ရှိပါတယ်။ လူများလာရင် database aggregate / pagination၊ anonymous account cleanup နဲ့ analytics retention ထည့်ဖို့လိုပါတယ်။
+- Production မတင်ခင် တကယ့် mid/low-range Android Chrome၊ iPhone Safari၊ network reconnect နဲ့ server quotas/load ကို စမ်းပါ။ Room/channel အရေအတွက်များလာရင် room ခွဲပြီး Realtime architecture ကို ချဲ့ရပါမယ်။
 
 ## သတိပြုရန်
 - `api/ask.js` က ကိုယ့် API key ကို သုံးလို့ Anthropic Console မှာ လစဉ် အသုံးစရိတ် ကန့်သတ်ချက် (spend limit) သတ်မှတ်ထားပါ။
