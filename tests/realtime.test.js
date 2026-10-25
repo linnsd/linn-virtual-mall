@@ -218,3 +218,13 @@ test('realistic guests broadcast independent clothing colours and original reset
   assert.deepEqual(b.peers().find(p=>!p.sameTab).presence.c,{});
   a.close();b.close();
 });
+
+
+test('Shop 2 guests retain their shop and ground floor across realtime movement broadcasts',async()=>{
+  const net=network(),a=net.make(net.client(A),A,TA),b=net.make(net.client(B),B,TB);
+  await tick();await a.presence({...state('Shop 2 visitor'),site:2,f:0,x:-300,z:-180});await b.presence({...state('Shop 3 visitor'),site:3,f:2});await tick();
+  let peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,2);assert.equal(peer.presence.f,0);
+  net.advance(250);await a.presence({...state('Shop 2 visitor'),site:2,f:1,x:-299,z:-185,m:1});
+  peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,2);assert.equal(peer.presence.f,0);assert.equal(peer.presence.x,-299);
+  assert.equal(a.peers().find(p=>!p.sameTab).presence.f,2);a.close();b.close();
+});

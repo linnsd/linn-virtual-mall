@@ -1,3 +1,4 @@
+import { normalizeLocation } from '../lib/sites.js';
 import { createUuid } from '../lib/uuid.js';
 
 // Private, account-owned peer channels prevent forged sender IDs and staff badges.
@@ -12,7 +13,7 @@ export function normalizeState(input, staffAllowed = false) {
   if (Math.abs(input.x) > 10000 || Math.abs(input.z) > 10000 || Math.abs(input.y) > 1000) return null;
   const output = { n: String(input.n || 'Guest').slice(0, 20), s: input.s === 'f' ? 'f' : 'm',
     l: input.l === 'real' ? 'real' : 'custom', x: input.x, y: input.y, z: input.z, r: input.r,
-    site: input.site === 3 ? 3 : 1, f: [0, 1, 2].includes(input.f) ? input.f : 0,
+    ...normalizeLocation(input.site,input.f),
     m: input.m ? 1 : 0, d: input.d ? 1 : 0, st: input.st ? 1 : 0, staff: staffAllowed && input.staff ? 1 : 0 };
   if (input.c && typeof input.c === 'object') {
     output.c = {};

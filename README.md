@@ -1,7 +1,7 @@
 # Linn IT Mall · Vercel deploy
 
 ## ပါဝင်တာများ
-- `index.html` – Mall တစ်ခုလုံး (3D, ဆိုင် ၂ ဆိုင်, ကား, မြေပုံ, မြန်မာ/English)
+- `index.html` – Mall တစ်ခုလုံး (3D, Shop 1 / Shop 3 / Shop 2 ဆိုင် ၃ ဆိုင်, ကား, မြေပုံ, မြန်မာ/English)
 - `assets/` – 3D model (.glb), poster, နံရံပုံ, သီချင်း
 - `data/contact.json` – Viber / Messenger / ဖုန်းနံပါတ်
 - `data/catalog.json` – တကယ့်ပစ္စည်းစာရင်း (Claude ထဲက Admin ကနေ import လုပ်ထားတာကို ဒီမှာ ထည့်နိုင်)
@@ -173,7 +173,7 @@ Static fixtures တွေကို နေရာအလိုက် 12m zones န�
 
 Validation: `node --test tests/*.test.js` — frame statistics၊ diagnostics flags၊ floor visibility နဲ့ batching exclusions ကို စစ်ပါတယ်။ FPS တိုးတက်မှုက device / viewport / graphics setting / online guests ပေါ် မူတည်ပါတယ်။ အရင်/အပြီးတိုင်းတဲ့အခါ setting တူတူ၊ assets loading ပြီးချိန်နဲ့ peer count နီးစပ်တဲ့အချိန်ကို သုံးပါ။
 
-Chrome local sample (2026-10-25), Shop 1 ရှေ့ initial standing view၊ assets loading ပြီးနောက် rendered frames 240 ခု:
+Chrome local sample (2026-10-25, Shop 2 မထည့်မီ), Shop 1 ရှေ့ initial standing view၊ assets loading ပြီးနောက် rendered frames 240 ခု:
 
 | Viewport / mode | Optimization | Draw calls / frame | CPU / frame | FPS / frame p95 |
 |---|---|---:|---:|---|
@@ -183,3 +183,15 @@ Chrome local sample (2026-10-25), Shop 1 ရှေ့ initial standing view၊ a
 | 390 × 844 / Lite | On | 228 | 2.0 ms | 30.0 / 33.7 ms |
 
 ဒီတိုင်းတာမှုက Chrome desktop ပေါ်မှာ ဖြစ်ပြီး phone viewport ကိုပဲ emulate လုပ်ထားပါတယ်။ Physical phone CPU/GPU test မဟုတ်ပါ။ Live remote peers အရေအတွက်က desktop 1 → 2၊ phone viewport 2 → 1 ဖြစ်လို့ timing / triangles တွေမှာ network guest ပြောင်းလဲမှုလည်း ပါနိုင်ပါတယ်။ FPS cap ရှိပြီး အရင်ကတည်းက target FPS ရတဲ့စက်မှာ ပိုမြင့်တဲ့ FPS ထက် render ဝန်လျော့တာကို ပြပါတယ်။ Walking / overview / driving to Shop 3 ကို browser မှာ စမ်းပြီး Three.js r128 နဲ့ instance world bounds၊ animated transforms၊ movable doors နဲ့ roof visibility ကို သီးခြားစစ်ထားပါတယ်။
+
+
+## Shop 2 · Thapyagone
+
+- **No.117, Thapyagone Quarter, Naypyitaw**။ Character setup မှာ ဆိုင်ရွေးနိုင်ပြီး Shop 2 ကို တိုက်ရိုက်စမ်းရန် `http://localhost:3000/?shop=2` ကို ဖွင့်ပါ။ `?shop=1` / `?shop=3` လည်း ရပါတယ်။
+- Shop 2 က **တစ်ထပ်တည်း** ဖြစ်ပြီး IT ဘယ်ဘက်၊ Service အလယ်၊ Mobile & Electronics ညာဘက်ကို အတွင်း aisle ကနေ ကူးသွားနိုင်ပါတယ်။ အရှေ့ဝင်ပေါက် ၃ ခု၊ ထိုင်စောင့်ရန်၊ staff နဲ့ parking ပါပြီး lift / escalator မပါပါ။
+- မျက်နှာစာကို actual shop ပုံအတိုင်း အပြာရောင် portal / အနိမ့်အမြင့်ရှိသော roof cap၊ rooftop LINN ဆိုင်းဘုတ်၊ အဖြူရောင် IT SOLUTION / SERVICES / MOBILE & ELECTRONIC panel ၃ ခုဖြင့် ဆောက်ထားပါတယ်။ အတွင်း layout ကို prototype ပုံအတိုင်း ဆက်ထားပါတယ်။ အပေါ်က panel များမှာ signage သာဖြစ်ပြီး နောက်တစ်ထပ် မပါပါ။ IT cashier / gaming / laptop islands ဘယ်ဘက်၊ mobile နှင့် computer reception ကောင်တာ ၂ ခု အလယ်ဝင်ပေါက်ရှေ့ဘက်၊ waiting sofas အလယ်အတွင်းဘက်၊ repair benches နောက်ဘက်၊ Mobile cashier / brand bays / ဖုန်း display island ၃ တန်း / accessory wall ညာဘက် ပါပါတယ်။ Cutaway ပုံကို နောက်တစ်ထပ်အဖြစ် မဆောက်ထားပါ။ Photo board / photo dialog မပါပါ။
+- Area map မှာ **Shop 3 ↔ Shop 2 · Taungnyo Road** လမ်းကြောင်းကို ခရမ်းရောင်နဲ့ ပြထားပါတယ်။ ပေးထားတဲ့ route screenshot ကို အခြေခံပြီး virtual world အတွက် အကွာအဝေးချုံ့ထားတဲ့ လမ်းကြောင်းပါ။ Live GPS / traffic navigation မဟုတ်ပါ။
+- Shop 3 ကားမှာ Shop 1 / Shop 2 ကို **ကိုယ်တိုင်မောင်း / အလိုအလျောက်မောင်း** ရွေးနိုင်ပါတယ်။ Shop 2 မှ Shop 3 ပြန်သွားနိုင်ပြီး Shop 1 ↔ Shop 2 ကို Shop 3 မှာ တစ်ဆင့်ပြောင်းစီးရပါတယ်။ Auto drive မှာ သွား/ပြန် lane ခွဲထားပြီး parking နားမှာ lane offset ကို တဖြည်းဖြည်း ပြန်ညှိပါတယ်။
+- Shop 2 multiplayer presence နဲ့ map floor ကို `lib/sites.js` ရဲ့ site/floor စာရင်းနဲ့ validate လုပ်ပါတယ်။ Existing SQL setup ပြီးထားရင် SQL ထပ် run ဖို့ မလိုပါ။ Deploy ပြီးရင် clients အားလုံး refresh လုပ်ပါ။
+
+Validation: `node --test tests/*.test.js`။ Site/floor validation၊ entrance clearance၊ route endpoints / return direction၊ auto-drive lane offsets နဲ့ Shop 2 realtime broadcasts ကို စစ်ထားပါတယ်။

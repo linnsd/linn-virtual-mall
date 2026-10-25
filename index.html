@@ -29,6 +29,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:3px solid var(--green);outline-offset:2px}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
 .pre .hud{display:none!important}
+@media(max-width:1024px){#perfPanel{top:110px!important;bottom:auto!important}}
 
 .brand{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;padding:8px 14px 8px 8px;display:flex;gap:10px;align-items:center}
 .mark{height:38px;width:86px;flex:none;object-fit:contain;display:block;background:#fff;border-radius:8px;padding:3px 5px;box-sizing:border-box}
@@ -342,7 +343,7 @@ body[data-quality="lite"] .panel,body[data-quality="low"] .panel,body[data-quali
   <div class="setup">
     <button type="button" id="langBtn2" class="langgate">English</button>
     <h1>Linn IT <span>Mall</span></h1>
-    <p class="lead">Shop 1, Bogyoke Road, Pyinmana. Make your character, then walk in. Our staff are inside to help.</p>
+    <p class="lead">Choose a Linn shop, customize your character and walk in. Our staff are inside to help.</p>
     <p class="mm">ကိုယ်ပိုင် character ရွေးပြီး ဆိုင်ထဲ ဝင်ပါ</p>
     <div class="grp"><label for="name">Your name</label><input id="name" maxlength="14" placeholder="Guest" autocomplete="off"></div>
     <div class="grp"><p>Character</p><div class="seg" id="sex"><button type="button" data-v="m" aria-pressed="true">Male</button><button type="button" data-v="f" aria-pressed="false">Female</button></div></div>
@@ -365,6 +366,7 @@ body[data-quality="lite"] .panel,body[data-quality="low"] .panel,body[data-quali
       <div class="grp"><p>Glasses</p><div class="chips" id="o-glasses"></div></div>
       <div class="grp"><p>Hat</p><div class="chips" id="o-hat"></div></div>
     </div></div>
+    <div class="grp"><label for="entrySite">ဆိုင်ရွေးရန် · Choose a shop</label><select id="entrySite" style="width:100%;padding:10px;border-radius:10px;font:inherit"><option value="1">Shop 1 · Bogyoke Road</option><option value="3">Shop 3 · Paung Laung</option><option value="2">Shop 2 · Thapyagone · IT / Service / Mobile</option></select></div>
     <button class="go" id="go" type="button">Enter Shop 1</button>
     <small>Music plays softly outside and gets louder inside the store.</small>
   </div>
@@ -379,6 +381,8 @@ body[data-quality="lite"] .panel,body[data-quality="low"] .panel,body[data-quali
 import { advanceCar, findCarContact, boxContact, CAR_HULL, drivingSpeed } from './lib/driving.js';
 import { initialQuality, renderBudget, lowerQuality } from './lib/quality.js';
 import { parkingFor } from './lib/parking.js';
+import { SITES, SITE_IDS, ROAD_LINKS, roadPoints, destinations, nextHop, travelLeg, entranceOpen, siteSpawn, drivingLane } from './lib/sites.js';
+import { buildShop2 } from './lib/shop2.js';
 import { dressAvatar, clothingColors } from './lib/clothing.js';
 import { createPlaylist } from './lib/playlist.js';
 import { performanceOptions, createPerformanceReporter } from './lib/performance.js';
@@ -833,8 +837,6 @@ $("setupBtn").onclick=()=>{ renderSlots(); $("admin").classList.add("on"); };
 $("aClose").onclick=()=>$("admin").classList.remove("on");
 
 /* ============ World ============ */
-const SITES={1:{ox:0,oz:0,name:"Shop 1",addr:"Shop 1, Bogyoke Road, Pyinmana",floors:["1F  Mobile Phone & TV","2F  IT & Home Appliances"]},
-             3:{ox:-60,oz:-240,name:"Shop 3",addr:"Shop 3, Paung Laung, Pyinmana · Head Office",floors:["1F  Mobile Phone & Accessories","2F  IT & Apple Devices","3F  Computer Training Center"]}};
 const obstacles=[]; const block=(x1,x2,z1,z2,f,site=1)=>{ const o={x1,x2,z1,z2,f,site}; obstacles.push(o); return o; };
 const CORNERS=[]; function corner(id,name,floor,x,z,sub,extra={}){ const c={id,name,floor,x,z,sub,site:1,...extra}; CORNERS.push(c); return c; }
 const CONTACT="https://linn.com.mm/contact.html";
@@ -893,10 +895,13 @@ function buildWorld(){
   scooter(-5.5,3.2,0.3); scooter(11,3.4,-0.2); scooter(12.6,3.1,0.1);
   robot=buildRobot(7.6,2.0,-0.25); block(7.1,8.1,1.5,2.5,0);
 
-  buildCorners(); buildLift(0,0,2,1); buildStaff(); buildShop3(); buildRoute(); buildParking(); buildCar();
+  buildCorners(); buildLift(0,0,2,1); buildStaff(); buildShop3();
+  buildShop2({THREE,scene,site:SITES[2],box:B,plane,sign,lam,bas,block,corner,roofs:ROOFS,plant,seats:CHAIRS,addStaff,mkM,mkW,actions:{service:openService,sit:()=>trySit(true)},screenTextures:SCREENS,canvasTex,drawLogo});
+  buildRoute(); buildShop2Road(); buildParking(); buildCar();
+  adScreen(2,0,0,-21.5,0);
   adScreen(1,0,4,-9.4,0); adScreen(3,0,3,-9.4,0); adScreen(1,1,2.6,-9.4,0); adScreen(3,1,3,-9.6,0);
   [[1,0,-2,-8],[1,0,10.5,-14],[1,0,-13.5,-6],[1,1,1,-16],[1,1,13,-8],[1,1,-10,-14],
-   [3,0,-1,-8],[3,0,12,-12],[3,0,-12,-9],[3,1,4,-12],[3,1,-14,-16],[3,2,12.45,-18.2]].forEach(a=>couponAt(...a));
+   [2,0,-12,-11],[2,0,1,-10],[2,0,13,-12],[3,0,-1,-8],[3,0,12,-12],[3,0,-12,-9],[3,1,4,-12],[3,1,-14,-16],[3,2,12.45,-18.2]].forEach(a=>couponAt(...a));
   applyQuality(QUALITY);
   buildTraffic(); buildFestival();
   for(const roof of ROOFS) roof.userData.noBatch=true;
@@ -1340,13 +1345,16 @@ function buildShop3(){
 }
 
 /* ============ Road from Shop 1 to Shop 3 ============ */
-const ROUTE={};
+const ROAD_ROUTES=ROAD_LINKS.map(link=>({...link}));
+const [ROUTE,ROUTE32]=ROAD_ROUTES;
 function buildRoute(){
-  const W=[[PARK[1].x,PARK[1].z],[29,12.8],[9,12.8],[-12,15.2],[-38,15.6],[-49,8],[-53,-12],[-52,-38],[-55,-62],[-64,-92],[-76,-122],[-82,-154],[-79,-186],[-73,-206],[-70,-219],[-62,-226.4],[-51,-227.2],[-31,-227.2],[PARK[3].x,PARK[3].z]];
+  const W=roadPoints("1-3");
+  ROUTE32.curve=new THREE.CatmullRomCurve3(roadPoints("3-2").map(([x,z])=>new THREE.Vector3(x,0,z)),false,"centripetal");
+  ROUTE32.len=ROUTE32.curve.getLength();ROUTE32.pts200=ROUTE32.curve.getSpacedPoints(200);
   const curve=new THREE.CatmullRomCurve3(W.map(([x,z])=>new THREE.Vector3(x,0,z)),false,"centripetal");
   ROUTE.curve=curve; ROUTE.len=curve.getLength();
   const N=520, pts=curve.getSpacedPoints(N);
-  const onStreet=(p)=>(Math.abs(p.x)<60&&Math.abs(p.z-16)<6.2)||(Math.abs(p.x+60)<60&&Math.abs(p.z+224)<6.2);
+  const onStreet=(p)=>SITE_IDS.some(id=>Math.abs(p.x-SITES[id].ox)<60&&Math.abs(p.z-SITES[id].oz-16)<6.2);
   // asphalt ribbon + centre line
   const pos=[], idx=[], line=[]; let vi=0;
   for(let i=0;i<N;i++){ const a=pts[i], c=pts[i+1]; if(onStreet(a)&&onStreet(c)) continue;
@@ -1365,11 +1373,11 @@ function buildRoute(){
   const deck=new THREE.Mesh(new THREE.BoxGeometry(8.4,0.25,20),lam(0x9aa1a8)); deck.position.set(bp.x,0.0,bp.z); deck.rotation.y=bry; scene.add(deck);
   for(const s of [-1,1]){ const rl=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.9,20),lam(0xd8dde3)); rl.position.set(bp.x+Math.cos(bry)*s*4.1,0.55,bp.z-Math.sin(bry)*s*4.1); rl.rotation.y=bry; scene.add(rl); }
   ROUTE.bridge={x:bp.x,z:bp.z,ry:bry}; ROUTE.river={x:rc.x,z:rc.z,dx:rv.x,dz:rv.z}; ROUTE.pts200=curve.getSpacedPoints(200);
-  for(const S of [SITES[1],SITES[3]]){ const H=S===SITES[1]?10.5:18.5; CARBOX.push([S.ox-17.7,S.ox+17.7,S.oz-22.7,S.oz+0.6,H],[S.ox-42.5,S.ox-17.5,S.oz-21.5,S.oz-0.5,9.5],[S.ox+17.5,S.ox+42.5,S.oz-21.5,S.oz-0.5,9.5]); }
+  for(const id of SITE_IDS){ const S=SITES[id],H=id===1?10.5:id===2?10:18.5; CARBOX.push([S.ox-17.7,S.ox+17.7,S.oz-22.7,S.oz+0.6,H]);if(id!==2)CARBOX.push([S.ox-42.5,S.ox-17.5,S.oz-21.5,S.oz-0.5,9.5],[S.ox+17.5,S.ox+42.5,S.oz-21.5,S.oz-0.5,9.5]); }
   CIRC.push({x:-140,z:-118,r:22,h:30});
   // houses, trees and a pagoda along the way
-  const nearRoad=(x,z)=>{ for(let i=0;i<=N;i+=4){ if(Math.hypot(pts[i].x-x,pts[i].z-z)<9.5) return true; } return false; };
-  const inSite=(x,z)=>(Math.abs(x)<64&&z>-27&&z<25)||(Math.abs(x+60)<64&&z>-267&&z<-213);
+  const nearRoad=(x,z)=>ROAD_ROUTES.some(route=>route.pts200?.some(p=>Math.hypot(p.x-x,p.z-z)<11));
+  const inSite=(x,z)=>SITE_IDS.some(id=>Math.abs(x-SITES[id].ox)<64&&z>SITES[id].oz-27&&z<SITES[id].oz+25);
   const rnd=(()=>{ let s=7; return ()=>((s=Math.imul(s,48271)%2147483647)&0x7fffffff)/2147483647; })();
   const walls=[0xf3e3c3,0xe6efe9,0xf1d6c8,0xdfe6f2,0xf5f0e1,0xe8d2b0], roofs=[0xb2482f,0x3f6fae,0x6b7d4b,0x9a9fa6,0xc0602f];
   for(let i=8;i<N-8;i+=9){ const p=pts[i], q=pts[i+1], dx=q.x-p.x, dz=q.z-p.z, l=Math.hypot(dx,dz)||1;
@@ -1386,6 +1394,30 @@ function buildRoute(){
   B(-6,0,10.6,0.12,2.2,0.12,0x666b72); plane(sign("Shop 3 · Paung Laung","#2FA84A","#ffffff","Head Office  ←",512,160),2.2,0.7,-6,2.4,10.65);
 }
 
+function buildShop2Road(){
+  const route=ROUTE32,points=route.curve.getSpacedPoints(480),vertices=[],indices=[];let n=0;
+  const street=p=>SITE_IDS.some(id=>Math.abs(p.x-SITES[id].ox)<60&&Math.abs(p.z-SITES[id].oz-16)<6.2);
+  for(let i=0;i<points.length-1;i++){
+    const a=points[i],b=points[i+1];if(street(a)&&street(b))continue;
+    const dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz)||1,nx=-dz/len*3.6,nz=dx/len*3.6;
+    vertices.push(a.x+nx,.006,a.z+nz,a.x-nx,.006,a.z-nz,b.x+nx,.006,b.z+nz,b.x-nx,.006,b.z-nz);indices.push(n,n+2,n+1,n+1,n+2,n+3);n+=4;
+    if(i%8<4){const dash=new THREE.Mesh(new THREE.BoxGeometry(.18,.01,a.distanceTo(b)),bas(0xf2f2f2));dash.position.set((a.x+b.x)/2,.015,(a.z+b.z)/2);dash.rotation.y=Math.atan2(dx,dz);scene.add(dash);}
+  }
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute("position",new THREE.Float32BufferAttribute(vertices,3));geometry.setIndex(indices);geometry.computeVertexNormals();scene.add(new THREE.Mesh(geometry,new THREE.MeshLambertMaterial({color:0x5d636b,side:THREE.DoubleSide})));
+  // Lightweight roadside fields and trees, clear of both shop lots and the road.
+  for(let i=35;i<170;i+=20){
+    const u=i/200,p=route.curve.getPointAt(u),t=route.curve.getTangentAt(u);
+    for(const side of [-1,1]){
+      const x=p.x-t.z*18*side,z=p.z+t.x*18*side;
+      if(SITE_IDS.some(id=>Math.abs(x-SITES[id].ox)<65&&Math.abs(z-SITES[id].oz)<35))continue;
+      B(x,-.012,z,18,.015,14,i%40===35?0x8d9f61:0x718e50);
+      tree(x,z);CIRC.push({x,z,r:.6,h:5});
+    }
+  }
+  for(const [x,z,text] of [[-25,-215,"Shop 2 · Thapyagone →"],[-141,-161,"Taungnyo Road"],[-247,-160,"Shop 2 · No.117"]]){
+    B(x,0,z+4.4,.12,2.3,.12,0x6b7280);plane(sign(text,"#1746C9","#ffffff",null,768,160),3.8,.8,x,2.6,z+4.45);
+  }
+}
 /* ============ Linn car ============ */
 let CAR=null;
 const PARK=Object.fromEntries(Object.entries(SITES).map(([id,site])=>[id,parkingFor(site)]));
@@ -1481,7 +1513,10 @@ function buildCar(){
       const halfX=Math.abs(Math.sin(P.rot))*CAR_HULL.halfLength+Math.abs(Math.cos(P.rot))*CAR_HULL.halfWidth;
       const halfZ=Math.abs(Math.cos(P.rot))*CAR_HULL.halfLength+Math.abs(Math.sin(P.rot))*CAR_HULL.halfWidth;
       Object.assign(this.blockRef,{x1:P.x-halfX,x2:P.x+halfX,z1:P.z-halfZ,z2:P.z+halfZ,site});
-      Object.assign(this.corn,{site,x:P.exit[0],z:P.exit[1],name:site===1?"Linn car · drive to Shop 3 (Paung Laung)":"Linn car · drive back to Shop 1 (Bogyoke Rd)"}); },
+      const links=destinations(site);
+      Object.assign(this.corn,{site,x:P.exit[0],z:P.exit[1],name:"Linn car · "+links.map(id=>SITES[id].name).join(" / "),acts:links.flatMap(to=>[
+        {l:links.length===1?"Drive myself":"Drive to "+SITES[to].name,run:()=>startManual(to)},
+        {l:links.length===1?"Auto drive":"Auto to "+SITES[to].name,run:()=>startDrive(to)}])}); },
     idle(){} };
   CAR.park(1);
 }
@@ -1512,18 +1547,23 @@ function trySit(fromButton){
 }
 function standUp(){ const c=state.sit; if(!c) return; c.taken=false; state.sit=null; state.x=c.x-Math.sin(c.rot)*0.75; state.z=c.z-Math.cos(c.rot)*0.75; }
 function startDriveTracked(kind){ track(d=>{ d.drives++; }); }
-function startDrive(){ startDriveTracked(); document.body.classList.add("driving");
-  const to=CAR.site===1?3:1;
-  state.drive={t:0,dur:ROUTE.len/13+3,rev:to===1,to,label:to===3?"Driving to Shop 3 · Paung Laung":"Driving to Shop 1 · Bogyoke Road",rot:CAR.g.rotation.y,last:null};
+function routeForTrip(from,to){const leg=travelLeg(from,to);return leg?{...leg,route:ROAD_ROUTES.find(r=>r.key===leg.key)}:null;}
+function startDrive(target=destinations(CAR.site)[0]){
+  const trip=routeForTrip(CAR.site,target);if(!trip)return;
+  startDriveTracked(); document.body.classList.add("driving");
+  const to=trip.destination,route=trip.route;
+  state.drive={t:0,dur:route.len/13+3,rev:trip.reverse,route,to,label:"Driving to "+SITES[to].name+" · "+SITES[to].area,rot:CAR.g.rotation.y,last:null};
   state.near=null; $("prompt").classList.remove("on"); $("drivebar").classList.remove("hidden");
   $("driveText").innerHTML=`${state.drive.label} <span class="bar"><i id="driveBar" style="width:0%"></i></span>`;
-  toast(to===3?"Shop 3 ကို သွားနေပါပြီ":"Shop 1 ကို ပြန်သွားနေပါပြီ");
+  toast(SITES[to].name+" ကို သွားနေပါပြီ");
 }
 function updateDrive(dt){
   const D=state.drive; const previousT=D.t; D.t+=dt; const k=Math.min(1,D.t/D.dur), e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2, u=D.rev?1-e:e;
-  const p=ROUTE.curve.getPointAt(u), tg=ROUTE.curve.getTangentAt(u); if(D.rev) tg.negate();
+  const p=D.route.curve.getPointAt(u), tg=D.route.curve.getTangentAt(u),lane=drivingLane(D.rev,u);
+  p.x-=tg.z*lane;p.z+=tg.x*lane;if(D.rev)tg.negate();
   const heading=Math.atan2(tg.x,tg.z);
-  if(findCarContact({x:p.x,z:p.z,h:heading,y:0},{vehicles:carWorld().vehicles})){D.t=previousT;return;}
+  if(findCarContact({x:p.x,z:p.z,h:heading,y:0},{vehicles:carWorld().vehicles})){D.t=previousT;D.blockedFor=(D.blockedFor||0)+dt;return;}
+  D.blockedFor=0;
   if(D.last){ CAR.spin(p.distanceTo(D.last)); }
   D.last=p.clone();
   let target=Math.atan2(tg.x,tg.z), dr=target-D.rot; dr=Math.atan2(Math.sin(dr),Math.cos(dr)); D.rot+=dr*Math.min(1,dt*6);
@@ -1536,7 +1576,7 @@ function updateDrive(dt){
 const CARBOX=[], CIRC=[];
 function carWorld(){
   const boxes=CARBOX.map(b=>({x:(b[0]+b[1])/2,z:(b[2]+b[3])/2,halfWidth:(b[1]-b[0])/2,halfLength:(b[3]-b[2])/2,height:b[4]||10}));
-  boxes.push({x:-345,z:-110,halfWidth:15,halfLength:470,height:100},{x:285,z:-110,halfWidth:15,halfLength:470,height:100},
+  boxes.push({x:-425,z:-110,halfWidth:15,halfLength:470,height:100},{x:285,z:-110,halfWidth:15,halfLength:470,height:100},
     {x:-30,z:-575,halfWidth:315,halfLength:15,height:100},{x:-30,z:355,halfWidth:315,halfLength:15,height:100});
   const vehicles=TRAFFIC.map(v=>({x:v.mesh.g.position.x,z:v.mesh.g.position.z,h:v.mesh.g.rotation.y,y:0,
     halfWidth:v.kind==="bike"?0.45:CAR_HULL.halfWidth,halfLength:v.kind==="bike"?1.1:CAR_HULL.halfLength,
@@ -1555,9 +1595,9 @@ function carWorld(){
 function carBlocked(x,z,h,y=0){ return !!findCarContact({x,z,h,y},carWorld()); }
 
 let navArrow=null;
-function startManual(){ startDriveTracked(); document.body.classList.add("driving"); $("driveControls").classList.remove("hidden");
-  const to=CAR.site===1?3:1;
-  state.drive={manual:true,to,label:to===3?"Driving to Shop 3 · Paung Laung":"Driving to Shop 1 · Bogyoke Road",speed:0,steer:0,h:CAR.g.rotation.y,x:CAR.g.position.x,z:CAR.g.position.z,canPark:false,y:0,vy:0,fly:false,hov:0};
+function startManual(target=destinations(CAR.site)[0]){ const trip=routeForTrip(CAR.site,target);if(!trip)return;startDriveTracked(); document.body.classList.add("driving"); $("driveControls").classList.remove("hidden");
+  const to=trip.destination;
+  state.drive={manual:true,to,route:trip.route,rev:trip.reverse,label:"Driving to "+SITES[to].name+" · "+SITES[to].area,speed:0,steer:0,h:CAR.g.rotation.y,x:CAR.g.position.x,z:CAR.g.position.z,canPark:false,y:0,vy:0,fly:false,hov:0};
   state.near=null; state.keys={}; $("prompt").classList.remove("on"); $("drivebar").classList.remove("hidden"); $("skipBtn").textContent="Auto-drive the rest";
   if(!navArrow){ navArrow=new THREE.Mesh(new THREE.ConeGeometry(0.45,1.3,4),new THREE.MeshBasicMaterial({color:0x2FA84A})); navArrow.rotation.x=Math.PI/2; const holder=new THREE.Group(); holder.add(navArrow); scene.add(holder); navArrow=holder; }
   navArrow.visible=true;
@@ -1594,9 +1634,9 @@ function updateManual(dt){
   CAR.hover(D.hov,performance.now()/1000);
   state.x=D.x; state.z=D.z; state.y=D.y; state.f=0;
   // navigation: arrow toward the next stretch of the route
-  let bu=0,bd=1e9; for(let i=0;i<=200;i++){ const p=ROUTE.pts200[i], d=(p.x-D.x)**2+(p.z-D.z)**2; if(d<bd){bd=d;bu=i;} }
+  let bu=0,bd=1e9; for(let i=0;i<=200;i++){ const p=D.route.pts200[i], d=(p.x-D.x)**2+(p.z-D.z)**2; if(d<bd){bd=d;bu=i;} }
   const P=PARK[D.to], dist=Math.hypot(P.x-D.x,P.z-D.z);
-  const tgt=dist<30?P:ROUTE.pts200[Math.max(0,Math.min(200,bu+(D.to===3?8:-8)))];
+  const tgt=dist<30?P:D.route.pts200[Math.max(0,Math.min(200,bu+(D.rev?-8:8)))];
   navArrow.position.set(D.x,D.y+3.4+Math.sin(performance.now()/300)*0.15,D.z); navArrow.rotation.y=Math.atan2(tgt.x-D.x,tgt.z-D.z);
   D.parkSite=null;
   if(D.y<.2&&Math.abs(D.speed)<1.5){for(const [id,park] of Object.entries(PARK))if(Math.hypot(park.x-D.x,park.z-D.z)<3.2)D.parkSite=Number(id);}
@@ -1613,9 +1653,9 @@ function toggleFly(){ const D=state.drive; if(!D||!D.manual) return;
 function endDrive(){
   document.body.classList.remove("driving","flying");$("driveControls").classList.add("hidden");state.keys={};joyEnd();
   const to=state.drive.parkSite||state.drive.to; state.drive=null; CAR.park(to); CAR.steer(0); if(navArrow) navArrow.visible=false; $("skipBtn").textContent="Skip ride";
-  state.site=to; const P=PARK[to]; state.x=P.exit[0]; state.z=P.exit[1]; state.f=0; state.y=0; state.rot=Math.PI; state.yaw=0; state.pitch=0.25;
+  state.site=to; const P=PARK[to]; state.x=P.exit[0]; state.z=P.exit[1]; state.f=0; state.y=0; state.rot=Math.PI; state.yaw=0; state.pitch=to===2 ? .08 : .25;
   camPos.set(state.x,3,state.z+7); $("drivebar").classList.add("hidden");
-  toast(to===3?"Linn Shop 3 (Paung Laung) သို့ ရောက်ပါပြီ":"Linn Shop 1 (Bogyoke Road) သို့ ရောက်ပါပြီ");
+  toast("Linn "+SITES[to].name+" ("+SITES[to].area+") သို့ ရောက်ပါပြီ");
 }
 $("skipBtn").onclick=()=>{ const D=state.drive; if(!D) return; if(D.manual){ D.parkSite=null; endDrive(); return; } D.t=D.dur; };
 function driveCamera(dt){
@@ -1707,6 +1747,11 @@ $("name").addEventListener("keydown",e=>{ if(e.key==="Enter") $("go").click(); }
 
 /* ============ Player, input ============ */
 const state={site:1,drive:null,x:4,z:7,f:0,y:0,rot:0,yaw:0,pitch:0.28,keys:{},joy:{x:0,y:0},ride:null,started:false,shopping:false,near:null,walk:0,preview:0.35};
+function chooseEntrySite(){ state.site=Number($("entrySite").value);state.pitch=state.site===2 ? .08 : .28; $("go").textContent="Enter "+SITES[state.site].name; }
+$("entrySite").onchange=chooseEntrySite;
+const requestedSite=Number(new URLSearchParams(location.search).get("shop"));
+if(SITE_IDS.includes(requestedSite))$("entrySite").value=String(requestedSite);
+chooseEntrySite();
 const keymap={KeyW:"f",ArrowUp:"f",KeyS:"b",ArrowDown:"b",KeyA:"l",ArrowLeft:"l",KeyD:"r",ArrowRight:"r"};
 addEventListener("keydown",e=>{
   if(!state.started||e.target.tagName==="INPUT") return;
@@ -1743,9 +1788,9 @@ for(const button of $("driveControls").querySelectorAll("button")){
   for(const type of ["pointerup","pointercancel","lostpointercapture"]) button.addEventListener(type,()=>{state.keys[button.dataset.drivekey]=false;});
 }
 
-function blocked(x,z,f,site=state.site){ const r=0.35, S=SITES[site], lx=x-S.ox, lz=z-S.oz;
+function blocked(x,z,f,site=state.site){ const r=0.35, S=SITES[site];if(!S||!S.floors[f])return true;const lx=x-S.ox, lz=z-S.oz;
   if(f>=1){ if(lz>-0.6||lz<-21.6||lx<-16.6||lx>16.6) return true; }
-  else if(lz>-0.45&&lz<0.45){ if(lx<2.6+r||lx>5.4-r) return true; }
+  else if(lz>-0.45&&lz<0.45){ if(!entranceOpen(S,lx,r)) return true; }
   else if(lz<=-0.45){ if(lx<-16.6||lx>16.6||lz<-21.6) return true; }
   else { if(lx<-50||lx>50||lz>21) return true; }
   for(const o of obstacles) if(o.site===site&&o.f===f&&x>o.x1-r&&x<o.x2+r&&z>o.z1-r&&z<o.z2+r) return true;
@@ -1893,7 +1938,7 @@ async function initSample(){
   SAMPLE=async(messages,opts={})=>{ const r=await fetch("/api/ask",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({messages}),signal:opts.signal});
     if(r.status===429) throw {code:"rate_limited"}; const j=await r.json().catch(()=>({})); if(!r.ok||!j.text) throw {code:"failed",text:"AI help is busy right now. Please try again."};
     if(opts.onText) opts.onText({text:j.text,delta:j.text}); return {text:j.text,truncated:false}; }; }
-const SHOPS_INFO=["Shop 1: No.11/7, Bogyoke Road, Pyinmana (small shop, no iPhones)","Shop 2: No.117, Thapyagone Quarter, Naypyitaw (large shop)","Shop 3: No.14/585, 4th Street, Paung Laung Quarter, Pyinmana (head office, large, has the Computer Training Center)","Shop 4: Pa.(231), Myoma Market, Naypyitaw (small shop, no iPhones)","Shop 5: No.OS-16, Nyarna Dipa Quarter, Ottarathiri Township (large, mostly premium and luxury products)"];
+const SHOPS_INFO=["Shop 1: No.11/7, Bogyoke Road, Pyinmana (small shop, no iPhones)","Shop 2: No.117, Thapyagone Quarter, Naypyitaw (single-floor IT, Service and Mobile departments)","Shop 3: No.14/585, 4th Street, Paung Laung Quarter, Pyinmana (head office, large, has the Computer Training Center)","Shop 4: Pa.(231), Myoma Market, Naypyitaw (small shop, no iPhones)","Shop 5: No.OS-16, Nyarna Dipa Quarter, Ottarathiri Township (large, mostly premium and luxury products)"];
 function storeContext(s){
   const S=SITES[s.o.site], seen=new Set(), lines=[];
   for(const c of CORNERS){ if(c.site!==s.o.site||!PRODUCTS[c.id]||seen.has(c.id)) continue; seen.add(c.id);
@@ -1977,7 +2022,7 @@ function adScreen(site,f,x,z,ry){ const S=SITES[site], c=document.createElement(
   for(const dx of [-0.9,0.9]) B(x+S.ox+dx,y+1.45,z+S.oz-0.03,0.03,(f+1)*F2-0.3-(y+1.45),0.03,0x6b7280);
   ADS.push({c,tex,site,f,i:-1}); }
 function drawSlide(a,sl){ const g=a.c.getContext("2d"), W=a.c.width, H=a.c.height, site=SITES[a.site];
-  const t=sl.t==="site"?(a.site===3?"Training Center":"Home Appliances"):sl.t, s=sl.t==="site"?(a.site===3?"Class 1–4 on 3F · ask at reception":"Fridges & washing machines · 2F"):sl.s, m=sl.t==="site"?(a.site===3?"ကွန်ပျူတာသင်တန်း 3F":"အိမ်သုံးပစ္စည်း 2F"):sl.m;
+  const t=sl.t==="site"?(a.site===2?"IT · Service · Mobile":a.site===3?"Training Center":"Home Appliances"):sl.t, s=sl.t==="site"?(a.site===2?"One floor · connected departments":a.site===3?"Class 1–4 on 3F · ask at reception":"Fridges & washing machines · 2F"):sl.s, m=sl.t==="site"?(a.site===2?"IT / ပြုပြင်ရေး / Mobile":a.site===3?"ကွန်ပျူတာသင်တန်း 3F":"အိမ်သုံးပစ္စည်း 2F"):sl.m;
   const gr=g.createLinearGradient(0,0,W,H); gr.addColorStop(0,sl.bg[0]); gr.addColorStop(1,sl.bg[1]); g.fillStyle=gr; g.fillRect(0,0,W,H);
   g.fillStyle="rgba(255,255,255,.12)"; for(let i=0;i<6;i++){ g.beginPath(); g.arc(W*0.85-i*30,H*0.2+i*18,60+i*20,0,Math.PI*2); g.fill(); }
   g.fillStyle="#fff"; g.textAlign="left"; g.textBaseline="alphabetic"; g.font=`800 64px ${FONT}`; g.fillText(t,30,120,W-60);
@@ -2050,7 +2095,7 @@ function setNav(c){ state.nav=c; $("navPill").classList.remove("hidden");
 function clearNav(){ state.nav=null; $("navPill").classList.add("hidden"); if(navArrowG){ navArrowG.visible=false; beacon.visible=false; } }
 $("navCancel").onclick=clearNav;
 function guideFor(t){
-  if(t.site!==state.site) return {x:CAR.corn.x,z:CAR.corn.z,f:0,label:`Take the Linn car to ${SITES[t.site].name}`};
+  if(t.site!==state.site){const hop=nextHop(state.site,t.site);return {x:CAR.corn.x,z:CAR.corn.z,f:0,label:`Take the Linn car to ${SITES[hop].name}${hop!==t.site?" · then "+SITES[t.site].name:""}`};}
   if(t.floor!==state.f){ const up=t.floor>state.f; let best=null,bd=1e9;
     for(const c of CORNERS){ if(c.site!==state.site||c.floor!==state.f) continue; if(!(c.id==="lift"||(up&&c.id==="up")||(!up&&c.id==="down"))) continue;
       const d=Math.hypot(c.x-state.x,c.z-state.z)+(c.id==="lift"?4:0); if(d<bd){bd=d;best=c;} }
@@ -2069,7 +2114,7 @@ state.nav=null;
 
 /* ============ Map: minimap (bottom right) and full map ============ */
 const MAPV={mm:"auto",tab:null,hits:[],T:0};
-const ENTR=[1,3].map(s=>({id:"entrance",site:s,floor:0,x:SITES[s].ox+4,z:SITES[s].oz+2.2,name:`${SITES[s].name} entrance`}));
+const ENTR=SITE_IDS.map(s=>({id:"entrance",site:s,floor:0,x:SITES[s].ox+SITES[s].entryX,z:SITES[s].oz+2.2,name:`${SITES[s].name} entrance`}));
 const isDark=()=>matchMedia("(prefers-color-scheme: dark)").matches;
 function pinLabel(g,x,y,txt,col,size){ g.font=`700 ${size}px ${FONT}`; const w=g.measureText(txt).width+12; g.fillStyle="rgba(255,255,255,.92)"; rr(g,x-w/2,y-size-14,w,size+8,6); g.fill(); g.fillStyle=col||"#0E2350"; g.textAlign="center"; g.fillText(txt,x,y-11); }
 function drawArea(g,W,H,cx,cz,s,full){
@@ -2078,14 +2123,17 @@ function drawArea(g,W,H,cx,cz,s,full){
   // river
   const R=ROUTE.river; if(R){ g.save(); g.translate(X(R.x),Z(R.z)); g.rotate(Math.atan2(R.dz,R.dx)); g.fillStyle="#4a86b0"; g.fillRect(-300*s,-6.5*s,600*s,13*s); g.restore(); }
   // shop lots, streets, buildings
-  for(const k of [1,3]){ const S=SITES[k];
+  for(const k of SITE_IDS){ const S=SITES[k];
     g.fillStyle=isDark()?"#4a4f57":"#9aa1aa"; g.fillRect(X(S.ox-60),Z(S.oz+10),120*s,12*s);
     g.fillStyle=isDark()?"#2c3a2c":"#c9c3b8"; g.fillRect(X(S.ox-60),Z(S.oz-23),120*s,24*s);
-    g.fillStyle="#e3c9a3"; g.fillRect(X(S.ox-42),Z(S.oz-21),24*s,20*s); g.fillRect(X(S.ox+18),Z(S.oz-21),24*s,20*s);
+    if(k!==2){g.fillStyle="#e3c9a3"; g.fillRect(X(S.ox-42),Z(S.oz-21),24*s,20*s); g.fillRect(X(S.ox+18),Z(S.oz-21),24*s,20*s);}
     g.fillStyle=k===1?"#1746C9":"#0E2350"; g.fillRect(X(S.ox-17),Z(S.oz-22),34*s,22*s); }
   // road between the shops
-  if(ROUTE.pts200){ g.strokeStyle=isDark()?"#5d636b":"#7d838b"; g.lineWidth=Math.max(3,7.2*s); g.lineCap="round"; g.lineJoin="round"; g.beginPath(); ROUTE.pts200.forEach((p,i)=>i?g.lineTo(X(p.x),Z(p.z)):g.moveTo(X(p.x),Z(p.z))); g.stroke();
-    g.strokeStyle="rgba(255,255,255,.7)"; g.lineWidth=Math.max(1,0.3*s); g.setLineDash([6,8]); g.stroke(); g.setLineDash([]); }
+  for(const route of ROAD_ROUTES)if(route.pts200){
+    g.strokeStyle=isDark()?"#5d636b":"#7d838b";g.lineWidth=Math.max(3,7.2*s);g.lineCap="round";g.lineJoin="round";g.beginPath();route.pts200.forEach((p,i)=>i?g.lineTo(X(p.x),Z(p.z)):g.moveTo(X(p.x),Z(p.z)));g.stroke();
+    g.strokeStyle=route===ROUTE32?"#7048e8":"rgba(255,255,255,.7)";g.lineWidth=Math.max(1.5,route===ROUTE32?2*s:.3*s);g.setLineDash(route===ROUTE32?[]:[6,8]);g.stroke();g.setLineDash([]);
+  }
+  if(full)pinLabel(g,X(-174),Z(-147),"Shop 3 ↔ Shop 2 · Taungnyo Rd","#7048e8",14);
   if(ROUTE.bridge){ g.save(); g.translate(X(ROUTE.bridge.x),Z(ROUTE.bridge.z)); g.rotate(-ROUTE.bridge.ry); g.fillStyle="#b8bec6"; g.fillRect(-4.2*s,-10*s,8.4*s,20*s); g.restore(); }
   // houses and the pagoda
   g.fillStyle=isDark()?"#5a5148":"#e8d9bf"; for(const c of CIRC) if(c.h>5&&c.h<20){ const r=c.r*s; g.fillRect(X(c.x)-r*0.8,Z(c.z)-r*0.8,r*1.6,r*1.6); }
@@ -2096,7 +2144,7 @@ function drawArea(g,W,H,cx,cz,s,full){
   for(const r of NET.peers.values()){ g.fillStyle="#ff7a1a"; g.beginPath(); g.arc(X(r.x),Z(r.z),5,0,Math.PI*2); g.fill(); }
   if(full){ g.font=`600 ${Math.max(14,Math.min(22,s*6))}px ${FONT}`; g.fillStyle="#2b5f86"; g.textAlign="center"; if(R) g.fillText("Ngalait River",X(R.x-60),Z(R.z+18));
     g.fillStyle="#7a5a12"; g.fillText("Pagoda",X(-140),Z(-118)+22);
-    for(const e of ENTR){ const ex=X(e.x), ez=Z(SITES[e.site].oz-11); pinLabel(g,ex,ez,SITES[e.site].name+(e.site===3?" · Paung Laung":" · Bogyoke Rd"),"#1746C9",20); hits.push({x:ex,y:ez-14,r:46,target:e}); } }
+    for(const e of ENTR){ const ex=X(e.x), ez=Z(SITES[e.site].oz-11); pinLabel(g,ex,ez,SITES[e.site].name+" · "+SITES[e.site].area,"#1746C9",20); hits.push({x:ex,y:ez-14,r:46,target:e}); } }
   else for(const e of ENTR){ g.fillStyle="#fff"; g.font=`700 18px ${FONT}`; g.textAlign="center"; g.fillText(SITES[e.site].name,X(e.x),Z(SITES[e.site].oz-11)); }
   return {X,Z,hits};
 }
@@ -2106,9 +2154,9 @@ function drawFloor(g,W,H,site,f,full){
   g.fillStyle=dark?"#13214a":"#eef3fa"; g.fillRect(0,0,W,H);
   g.fillStyle=dark?"#1d2a52":"#ffffff"; g.fillRect(X(S.ox-17),Z(S.oz-22),34*s,22*s);
   g.strokeStyle=dark?"#9aa8c7":"#0E2350"; g.lineWidth=Math.max(2,s*0.25); g.strokeRect(X(S.ox-17),Z(S.oz-22),34*s,22*s);
-  if(f===0){ g.strokeStyle="#4F7CFF"; g.lineWidth=Math.max(3,s*0.4); g.beginPath(); g.moveTo(X(S.ox+2.6),Z(S.oz)); g.lineTo(X(S.ox+5.4),Z(S.oz)); g.stroke(); }
+  if(f===0){ g.strokeStyle="#4F7CFF"; g.lineWidth=Math.max(3,s*0.4); g.beginPath(); for(const door of S.entrances){g.moveTo(X(S.ox+door.x-door.width/2),Z(S.oz)); g.lineTo(X(S.ox+door.x+door.width/2),Z(S.oz));} g.stroke(); }
   g.fillStyle=dark?"#33416b":"#e4e8ee"; for(const o of obstacles) if(o.site===site&&o.f===f&&(o.x2-o.x1)<12) g.fillRect(X(o.x1),Z(o.z1),(o.x2-o.x1)*s,(o.z2-o.z1)*s);
-  g.fillStyle="#b9bfc7"; g.fillRect(X(S.ox+10.4),Z(S.oz-4.7),3.2*s,3.4*s);
+  if(site!==2){g.fillStyle="#b9bfc7"; g.fillRect(X(S.ox+10.4),Z(S.oz-4.7),3.2*s,3.4*s);}
   for(const E of WELLS) if(E.site===site&&(E.f0===f||E.f0+1===f)){ g.fillStyle=dark?"#3d4a75":"#cfd6e2"; g.fillRect(X(E.x0+E.ox),Z(E.zT+E.oz),(E.x1-E.x0)*s,(E.zB-E.zT)*s); }
   if(site===3&&f===2){ g.strokeStyle=dark?"#9aa8c7":"#6b7280"; g.lineWidth=2; for(let i=1;i<4;i++){ const x=S.ox-16.6+i*8.3; g.beginPath(); g.moveTo(X(x),Z(S.oz-22)); g.lineTo(X(x),Z(S.oz-14.2)); g.stroke(); } g.beginPath(); g.moveTo(X(S.ox-17),Z(S.oz-14.2)); g.lineTo(X(S.ox+17),Z(S.oz-14.2)); g.stroke(); }
   for(const k of CORNERS){ if(k.site!==site||k.floor!==f||k.id==="seat") continue;
@@ -2134,9 +2182,9 @@ function drawMinimap(T){ if(!state.started||T-MAPV.T<0.1) return; MAPV.T=T;
 $("mmFloor").onclick=()=>{ MAPV.mm=MAPV.mm==="floor"?"auto":"floor"; MAPV.T=0; };
 $("mmArea").onclick=()=>{ MAPV.mm=MAPV.mm==="area"?"auto":"area"; MAPV.T=0; };
 // full map
-function mapTabs(){ const tabs=[["area","Area map"]]; for(const k of [1,3]) SITES[k].floors.forEach((fl,i)=>tabs.push([`${k}-${i}`,`${SITES[k].name} · ${i+1}F`])); return tabs; }
+function mapTabs(){ const tabs=[["area","Area map"]]; for(const k of SITE_IDS) SITES[k].floors.forEach((fl,i)=>tabs.push([`${k}-${i}`,`${SITES[k].name} · ${i+1}F`])); return tabs; }
 function drawBig(){ const c=$("bigmap"), g=c.getContext("2d"), W=c.width, H=c.height; let m;
-  if(MAPV.tab==="area"){ const xs=[-170,62], zs=[-280,44], s=Math.min(W/(xs[1]-xs[0]),H/(zs[1]-zs[0])); m=drawArea(g,W,H,(xs[0]+xs[1])/2,(zs[0]+zs[1])/2,s,true); drawYou(g,m.X,m.Z); }
+  if(MAPV.tab==="area"){ const xs=[Math.min(...SITE_IDS.map(id=>SITES[id].ox))-65,65], zs=[-280,44], s=Math.min(W/(xs[1]-xs[0]),H/(zs[1]-zs[0])); m=drawArea(g,W,H,(xs[0]+xs[1])/2,(zs[0]+zs[1])/2,s,true); drawYou(g,m.X,m.Z); }
   else { const [site,f]=MAPV.tab.split("-").map(Number); m=drawFloor(g,W,H,site,f,true); if(site===state.site&&f===state.f) drawYou(g,m.X,m.Z); }
   MAPV.hits=m.hits; }
 function openMap(){ if(!state.started) return; MAPV.tab=inBuilding()?`${state.site}-${state.f}`:"area";
@@ -2206,9 +2254,9 @@ function trafficCar(kind,opts){ let mesh, model=null;
   TRAFFIC.push(v); v.useModel(); return v; }
 function buildTraffic(){
   // along the route between the shops, both directions
-  for(let i=0;i<(LITE?2:4);i++) trafficCar("car",{route:true,u:i/4+0.05,dir:i%2?1:-1,speed:11,lane:i%2?-1.7:1.7});
+  for(const path of ROAD_ROUTES)for(let i=0;i<(LITE?2:4);i++) trafficCar("car",{route:true,path,u:i/4+0.08,dir:i%2?1:-1,speed:11,lane:i%2?-1.7:1.7});
   // along each shop's street
-  for(const site of [1,3]){ const S=SITES[site]; for(let i=0;i<(LITE?2:3);i++) trafficCar("car",{street:site,x:S.ox-55+i*40,dir:i%2?1:-1,speed:9,z:S.oz+16+(i%2?-2.2:2.2)}); }
+  for(const site of SITE_IDS){ const S=SITES[site]; for(let i=0;i<(LITE?2:3);i++) trafficCar("car",{street:site,x:S.ox-55+i*40,dir:i%2?1:-1,speed:9,z:S.oz+16+(i%2?-2.2:2.2)}); }
   // parked cars by the curb
   for(const [x,z] of Object.values(PARK).flatMap(park=>park.bays.slice(1).map(bay=>[bay.x,bay.z]))){ const p=buildCarMesh(false,CAR_COLORS[(x*7|0)%CAR_COLORS.length|0]||0xd9dde3); p.g.position.set(x,0,z); p.g.rotation.y=0; scene.add(p.g);
     TRAFFIC.push({parked:true,mesh:p,useModel(){ if(GLB.car_body) p.useModel(staticModel("car_body")); }}); }
@@ -2232,8 +2280,9 @@ function updateTraffic(dt,T){
   for(const v of TRAFFIC){ if(v.parked) continue; const g=v.mesh.g;
     let x,z,h,nextU,nextX;
     if(v.route){
-      nextU=.06+((v.u-.06+v.dir*v.speed*dt/ROUTE.len+.88)%.88);
-      const p=ROUTE.curve.getPointAt(nextU), tg=ROUTE.curve.getTangentAt(nextU);
+      const path=v.path||ROUTE;
+      nextU=.06+((v.u-.06+v.dir*v.speed*dt/path.len+.88)%.88);
+      const p=path.curve.getPointAt(nextU), tg=path.curve.getTangentAt(nextU);
       // Lane offsets use the same route normal for BOTH travel directions.
       x=p.x-tg.z*v.lane; z=p.z+tg.x*v.lane;
       h=Math.atan2(tg.x*v.dir,tg.z*v.dir);
@@ -2301,15 +2350,15 @@ function festBanner(x,y,z,w){ const tex=canvasTex(1024,220,(g,W,H)=>{ const gr=g
   const h=w*220/1024; const a=plane(tex,w,h,x,y,z,0); a.material.side=THREE.FrontSide; return a; } // seen from the street, invisible from inside
 function buildFestival(){
   const per=LITE?2:1;
-  for(const k of [1,3]){ const S=SITES[k], nF=S.floors.length;
-    for(let f=0;f<nF;f++){ const ceil=f<nF-1?(f+1)*F2-0.3:nF*F2-0.4;
+  for(const k of SITE_IDS){ const S=SITES[k], nF=S.floors.length;
+    for(let f=0;f<nF&&k!==2;f++){ const ceil=f<nF-1?(f+1)*F2-0.3:nF*F2-0.4;
       for(const lz of [-6.8,-15.5]) lanternString(S.ox-15.5,S.ox+15.5,ceil-0.15,S.oz+lz,3*per,f%2?[0xffb300,0xe53935,0xf06292]:[0xe53935,0xfdd835,0xff7043,0xab47bc]); }
     // outside: lanterns over the sidewalk, poles, entrance banner
     for(const x of [-17,23]){ B(S.ox+x,0,S.oz+6.6,0.12,3.9,0.12,0x5b3a29); }
     lanternString(S.ox-17,S.ox+23,3.85,S.oz+6.6,2.5*per,[0xe53935,0xfdd835,0xf06292,0xff7043]);
-    festBanner(S.ox+4,3.0,S.oz-0.25,3.8);
+    if(k!==2)festBanner(S.ox+4,3.0,S.oz-0.25,3.8);
     // big star lanterns by the door
-    for(const dx of [1.4,6.6]){ const g=lantern(S.ox+dx,2.7,S.oz+0.9,0xffd54f,1.5); }
+    for(const dx of (k===2?[-18,18]:[1.4,6.6])){ const g=lantern(S.ox+dx,2.7,S.oz+0.9,0xffd54f,1.5); }
     // clay oil lamps (မီးခွက်) along the kerb
     const n=LITE?24:44, cups=new THREE.InstancedMesh(new THREE.CylinderGeometry(0.07,0.045,0.06,10),lam(0x9c5a2e),n), fl=new THREE.InstancedMesh(new THREE.ConeGeometry(0.03,0.09,8),new THREE.MeshBasicMaterial({color:0xffc24a}),n);
     const m=new THREE.Matrix4(); for(let i=0;i<n;i++){ const x=S.ox-30+i*(60/n); m.makeTranslation(x,0.11,S.oz+9.75); cups.setMatrixAt(i,m); m.makeTranslation(x,0.18,S.oz+9.75); fl.setMatrixAt(i,m); }
@@ -2464,6 +2513,7 @@ function initAdmin(){
 /* ============ Myanmar localisation ============ */
 let LANG=(()=>{ try{ return localStorage.getItem("linnmall.lang")||"my"; }catch(e){ return "my"; } })();
 const MY={
+ "Choose a Linn shop, customize your character and walk in. Our staff are inside to help.":"ဆိုင်ရွေးပြီး ကိုယ့် character ကို ပြင်ဆင်ကာ ဆိုင်ထဲ ဝင်ပါ။ ဝန်ထမ်းတွေ ကူညီဖို့ အသင့်ရှိပါတယ်။",
  "Outside · Parking":"အပြင်ဘက် · ကားရပ်ရန်",
  "Customer parking":"ဝယ်သူများ ကားရပ်ရန်", "Marked bays · Linn car":"ကားရပ်ရန် လိုင်းများ · Linn ကား",
  "Find Linn car":"Linn ကား ရှာရန်", "Follow the arrow to the Linn car":"Linn ကားဆီ မြှားအတိုင်း လိုက်သွားပါ",
@@ -2497,10 +2547,15 @@ const MY={
  "🚶 Walk":"🚶 လမ်းလျှောက်","🗺 Overview":"🗺 အပေါ်စီး","💬 Chat":"💬 စကားပြော","🔍 Shops":"🔍 ဆိုင်များ","❔ Help":"❔ အကူအညီ",
  "or arrows to walk,":"သို့မဟုတ် မြှားခလုတ်ဖြင့် လမ်းလျှောက်၊","to run":"ပြေးရန်","Drag to look around":"ဆွဲ၍ ပတ်ပတ်လည် ကြည့်ရန်",
  "to shop, ride or ask staff ·":"ဝယ်ရန်၊ စီးရန်၊ ဝန်ထမ်းကို မေးရန် ·","to sit":"ထိုင်ရန်","to chat with other guests ·":"တခြား guest တွေနဲ့ စကားပြောရန် ·","map":"မြေပုံ",
- "Outside Shop 1":"Shop 1 အပြင်ဘက်","Outside Shop 3":"Shop 3 အပြင်ဘက်",
+ "Outside Shop 2":"Shop 2 အပြင်ဘက်","Outside Shop 1":"Shop 1 အပြင်ဘက်","Outside Shop 3":"Shop 3 အပြင်ဘက်",
+ "Enter Shop 2":"Shop 2 ထဲ ဝင်မည်","Enter Shop 3":"Shop 3 ထဲ ဝင်မည်",
+ "Shop 2, No.117, Thapyagone Quarter, Naypyitaw":"Shop 2၊ အမှတ် ၁၁၇၊ သပြေကုန်းရပ်ကွက်၊ နေပြည်တော်",
  "Shop 1, Bogyoke Road, Pyinmana":"Shop 1၊ ဗိုလ်ချုပ်လမ်း၊ ပျဉ်းမနား","Shop 3, Paung Laung, Pyinmana · Head Office":"Shop 3၊ ပေါင်းလောင်း၊ ပျဉ်းမနား · ရုံးချုပ်",
  "1F  Mobile Phone & TV":"1F  ဖုန်းနှင့် TV","2F  IT & Home Appliances":"2F  IT နှင့် အိမ်သုံးပစ္စည်း","1F  Mobile Phone & Accessories":"1F  ဖုန်းနှင့် ဆက်စပ်ပစ္စည်း",
  "2F  IT & Apple Devices":"2F  IT နှင့် Apple ပစ္စည်း","3F  Computer Training Center":"3F  ကွန်ပျူတာ သင်တန်းကျောင်း",
+ "Driving to Shop 2 · Thapyagone":"Shop 2 (သပြေကုန်း) သို့ မောင်းနေသည်",
+ "Drive to Shop 2":"Shop 2 သို့ ကိုယ်တိုင်မောင်း","Auto to Shop 2":"Shop 2 သို့ အလိုအလျောက်မောင်း","Drive to Shop 1":"Shop 1 သို့ ကိုယ်တိုင်မောင်း","Auto to Shop 1":"Shop 1 သို့ အလိုအလျောက်မောင်း",
+ "IT · Laptop & Computer":"IT · Laptop နှင့် ကွန်ပျူတာ",
  "Driving to Shop 3 · Paung Laung":"Shop 3 (ပေါင်းလောင်း) သို့ မောင်းနေသည်","Driving to Shop 1 · Bogyoke Road":"Shop 1 (ဗိုလ်ချုပ်လမ်း) သို့ မောင်းနေသည်",
  // prompts and actions
  "Shop":"ဝယ်မည်","Ride":"စီးမည်","Go":"သွားမည်","Open":"ဖွင့်မည်","Sit":"ထိုင်မည်","Spin":"လှည့်မည်","Ask (AI)":"မေးမည် (AI)","Drive myself":"ကိုယ်တိုင် မောင်းမည်","Auto drive":"အလိုအလျောက် မောင်း",
@@ -2572,7 +2627,7 @@ $("langBtn").onclick=()=>setLang(LANG==="my"?"en":"my"); $("langBtn2").onclick=(
 applyLang();
 
 /* ============ Loop ============ */
-const clock=new THREE.Clock(); const camPos=new THREE.Vector3(4,2,12), look=new THREE.Vector3(), tmp=new THREE.Vector3();
+const clock=new THREE.Clock(); const initialSpawn=siteSpawn(state.site); const camPos=new THREE.Vector3(initialSpawn.x,2,initialSpawn.z+5), look=new THREE.Vector3(), tmp=new THREE.Vector3();
 let lastWhere="";
 let lastRender=0;
 function frame(timestamp=performance.now()){
@@ -2620,7 +2675,7 @@ function frame(timestamp=performance.now()){
     if(where!==lastWhere){ lastWhere=where; $("where").textContent=where; $("brandSub").textContent=S.addr; }
     Music.set(state.drive?0.35:inside?1:Math.max(0,1-Math.hypot(state.x-S.ox-4,Math.max(0,lz))/18)*0.18);
   } else if(avatar){
-    avatar.g.position.set(4,0,7); avatar.g.rotation.y=state.preview+Math.sin(T*0.4)*0.25; avatar.pose(0,false,T); if(avatar.tick) avatar.tick(dt);
+    const spawn=siteSpawn(state.site); avatar.g.position.set(spawn.x,0,spawn.z); avatar.g.rotation.y=state.preview+Math.sin(T*0.4)*0.25; avatar.pose(0,false,T); if(avatar.tick) avatar.tick(dt);
   }
 
   // staff behaviour
@@ -2656,7 +2711,7 @@ function frame(timestamp=performance.now()){
   if(state.started&&MODE==="overview"&&!state.drive){ overviewCamera(dt,T); }
   else if(state.started&&state.drive){ driveCamera(dt); }
   else if(state.started){
-    const S=SITES[state.site], inside=(state.z-S.oz)<-0.3||state.f>=1, dist=inside?4.4:6.5, px=state.x,py=state.y,pz=state.z;
+    const S=SITES[state.site], inside=(state.z-S.oz)<-0.3||state.f>=1, dist=inside?4.4:state.site===2?14:6.5, px=state.x,py=state.y,pz=state.z;
     let d=dist,cx,cy,cz;
     for(;;){ cx=px+d*Math.cos(state.pitch)*Math.sin(state.yaw); cy=py+1.6+d*Math.sin(state.pitch); cz=pz+d*Math.cos(state.pitch)*Math.cos(state.yaw);
       const lx=cx-S.ox, lz=cz-S.oz, inShaft=lx>10.1&&lx<13.9&&lz>-5&&lz<-1;
@@ -2665,12 +2720,12 @@ function frame(timestamp=performance.now()){
       if(!inside||d<=1.4||(lx>-16.4&&lx<16.4&&lz>-21.5&&lz<5&&!inShaft&&roomOK)) break; d-=0.2; }
     if(inside) cy=Math.max(py+0.6,Math.min(py+3.2,cy)); else cy=Math.max(0.6,cy);
     const liftCam=state.ride&&state.ride.lift; if(liftCam){ const L=state.ride.liftObj, fl=state.f*F2; cx=12.4+L.ox; cz=-10.3+L.oz; cy=fl+2.1; }
-    camPos.lerp(tmp.set(cx,cy,cz),Math.min(1,dt*8)); look.set(px,py+1.35,pz);
+    camPos.lerp(tmp.set(cx,cy,cz),Math.min(1,dt*8)); look.set(px,py+(!inside&&state.site===2?3.2:1.35),pz);
     if(liftCam){ const L=state.ride.liftObj; look.set(12+L.ox,state.f*F2+1.3,-4.7+L.oz); }
   } else {
-    const narrow=innerWidth<=820;
-    if(narrow){ camPos.lerp(tmp.set(4,1.6,11),0.1); look.set(4,0.5,7); }
-    else { camPos.lerp(tmp.set(3.5,1.3,10.6),0.1); look.set(2.6,1.0,7); }
+    const narrow=innerWidth<=820,spawn=siteSpawn(state.site);
+    if(narrow){ camPos.lerp(tmp.set(spawn.x,1.6,spawn.z+4),0.1); look.set(spawn.x,0.5,spawn.z); }
+    else { camPos.lerp(tmp.set(spawn.x-.5,1.3,spawn.z+3.6),0.1); look.set(spawn.x-1.4,1.0,spawn.z); }
   }
   camera.position.copy(camPos); camera.lookAt(look);
   if(sceneOptimizer) sceneOptimizer.update(camera,state,MODE==="overview");
@@ -2683,10 +2738,10 @@ addEventListener("resize",()=>{ camera.aspect=innerWidth/innerHeight; layoutTool
 addEventListener("visibilitychange",()=>{state.keys={};joyEnd();clock.getDelta();fpsMon.t=fpsMon.n=0;perf.reset();});
 
 $("go").onclick=()=>{
-  rebuildGuest(); state.x=4; state.z=7; state.rot=Math.PI; state.yaw=0;
+  rebuildGuest(); Object.assign(state,siteSpawn(Number($("entrySite").value)),{f:0,y:0,rot:Math.PI,yaw:0,pitch:Number($("entrySite").value)===2 ? .08 : .28}); CAR.park(state.site);
   Music.start();
   $("gate").classList.add("hidden"); document.body.classList.remove("pre"); state.started=true;
-  $("moreTools").open=false; camPos.set(4,3,13); toast("Walk to the glass door to go inside"); couponHud(); setTimeout(()=>$("help").classList.add("off"),20000);
+  $("moreTools").open=false; camPos.set(state.x,3,state.z+6); toast("Walk to the glass door to go inside"); couponHud(); setTimeout(()=>$("help").classList.add("off"),20000);
   track(d=>{ d.sites[SITES[state.site].name]=(d.sites[SITES[state.site].name]||0)+1; });
 };
 
