@@ -311,6 +311,7 @@ kbd{font-family:inherit;font-size:12px;border:1px solid var(--line);border-botto
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script>
 (() => {
 const SHOP_URL = "https://shop.linn.com.mm/";
@@ -516,7 +517,38 @@ const SLOTS=[
   ["car_body","Car body","3D model (.glb)","glb"],["bike_body","Motorbike","3D model (.glb)","glb"],
 ];
 const ASSET_IDS={}; const GLB={}; const IMG_TARGETS={};
-let dbApi=null, assetsApi=null;
+let dbApi=null, assetsApi=null, mallBackend=null;
+async function initBackend(){
+  if(window.claude&&window.claude.use) return;
+  try{ const {connectMall}=await import("./supabase/browser.js"); mallBackend=await connectMall(); dbApi=mallBackend.database; }
+  catch(e){ console.warn("Supabase unavailable",e); }
+  initAccount();
+}
+function initAccount(){
+  const button=document.createElement("button"); button.type="button"; button.textContent="Staff login";
+  $("langBtn").parentElement.prepend(button);
+  const dialog=document.createElement("dialog"); dialog.className="panel";
+  dialog.innerHTML=`<form style="display:grid;gap:12px;max-width:320px;padding:16px"><h2>Admin / Staff login</h2><label>Email<input name="email" type="email" autocomplete="username" required style="display:block;width:100%"></label><label>Password<input name="password" type="password" autocomplete="current-password" required style="display:block;width:100%"></label><p role="status"></p><button type="submit">Sign in</button><button type="button" data-close>Close</button></form>`;
+  document.body.append(dialog); const form=dialog.querySelector("form"), message=form.querySelector('[role="status"]');
+  dialog.addEventListener("keydown",e=>e.stopPropagation());
+  form.querySelector('[data-close]').onclick=()=>dialog.close();
+  button.onclick=async()=>{
+    if(!mallBackend){ toast("Database connection unavailable. Please reload."); return; }
+    const {data}=await mallBackend.client.auth.getSession();
+    if(data.session&&!data.session.user.is_anonymous){
+      const {error}=await mallBackend.client.auth.signOut();
+      if(error){ toast("Couldn't sign out. Try again."); return; } location.reload(); return;
+    }
+    dialog.showModal();
+  };
+  form.onsubmit=async e=>{
+    e.preventDefault(); const submit=form.querySelector('[type="submit"]'); submit.disabled=true; message.textContent="Signing in…";
+    try{ const {error}=await mallBackend.client.auth.signInWithPassword({email:form.elements.email.value.trim(),password:form.elements.password.value});
+      if(error) throw error; location.reload();
+    }catch(e){ message.textContent=e.message||"Couldn't sign in"; submit.disabled=false; }
+  };
+  if(mallBackend) mallBackend.client.auth.getSession().then(({data})=>{ if(data.session&&!data.session.user.is_anonymous) button.textContent="Sign out"; });
+}
 const gltfLoader = THREE.GLTFLoader ? new THREE.GLTFLoader() : null;
 function b64ToBuf(b64){ const s=atob(b64.trim()); const u=new Uint8Array(s.length); for(let i=0;i<s.length;i++) u[i]=s.charCodeAt(i); return u.buffer; }
 // Downloaded models are kept in the browser (IndexedDB) so repeat visits load instantly
@@ -1627,18 +1659,48 @@ function upsertPeer(p){
 }
 function removePeer(id){ const rec=NET.peers.get(id); if(!rec) return; if(rec.av) scene.remove(rec.av.g); if(rec.car) scene.remove(rec.car.g); addChat("",`${rec.name||"A guest"} left`,true); NET.peers.delete(id); }
 async function initRoom(){
-  if(!window.claude||!window.claude.use) return; let room=null; try{ room=await window.claude.use("room"); }catch(e){} if(!room) return;
+  let room=null;
+  if(mallBackend){
+    try{
+      const {data,error}=await mallBackend.client.auth.getSession(); if(error) throw error;
+      if(!data.session){ toast("Online chat unavailable. Please reload and try again."); return; }
+      const role=await mallBackend.client.rpc("mall_is_staff"); if(role.error) throw role.error;
+      const {connectMallRoom}=await import("./supabase/realtime.js");
+      room=await connectMallRoom(mallBackend.client,{staffAllowed:role.data===true,onStatus:status=>{
+        const connected=status==="connected"||(status==="error"&&!!NET.room?.connected);
+        $("onlineBtn").classList.remove("hidden"); $("onlineBtn").title=connected?"Guests here now":"Realtime reconnecting";
+        $("onlineBtn").style.opacity=connected?"1":"0.5";
+        $("chatInput").disabled=!connected;
+        $("onlineN").textContent=connected?String(NET.room?.peers().length||1):"…";
+        if(!connected){ for(const id of [...NET.peers.keys()]) removePeer(id); updateStaffPill(); }
+        if(status==="signed_out"){ DUTY.on=false; location.reload(); }
+        if(status==="error") toast("Online connection interrupted. Retrying…");
+      }});
+    }catch(e){ console.warn("Realtime setup failed",e); toast("Online chat unavailable. Please reload and try again."); return; }
+  } else {
+    if(!window.claude||!window.claude.use) return;
+    try{ room=await window.claude.use("room"); }catch(e){} if(!room) return;
+  }
   NET.room=room; $("onlineBtn").classList.remove("hidden"); $("chat").classList.remove("hidden");
-  addChat("","Guests who are here now can see you. Press Enter to chat.",true);
+  $("chatInput").disabled=mallBackend?!room.connected:false;
+  addChat("","Online mall connected. Enter the mall to appear to others.",true);
+  addChat("","Mall chat is public. Everyone here can read your messages.",true);
   room.onPeers(ch=>{ for(const p of ch.left) removePeer(p.peer); for(const p of [...ch.joined,...ch.updated]) if(!p.sameTab) upsertPeer(p); $("onlineN").textContent=room.peers().length||1; updateStaffPill(); },()=>{});
+  if(room.onChat) room.onChat(message=>{
+    addChat(message.name,message.text,false,message.staff); const rec=NET.peers.get(message.peer); if(rec) sayBubble(rec.av,message.text);
+    if(DUTY.on&&/@staff|ဝန်ထမ်း/i.test(message.text)){ beep(); toast(`🔔 ${message.name}: ${message.text.slice(0,60)}`); }
+  });
+  if(mallBackend){ addEventListener("pagehide",()=>room.close(),{once:true}); }
 }
+addEventListener("pageshow",e=>{ if(e.persisted&&mallBackend) location.reload(); });
+
 function sendPresence(moving){
   if(!NET.room||!state.started) return; const now=performance.now(); if(now-NET.lastAt<100) return; NET.lastAt=now;
   const g=GUEST, o={n:guestName(),s:g.sex,l:g.look,site:state.site,f:state.f,x:+state.x.toFixed(2),y:+state.y.toFixed(2),z:+state.z.toFixed(2),r:+state.rot.toFixed(2),m:moving?1:0,d:state.drive?1:0,st:state.sit?1:0};
   if(state.drive){ o.x=+CAR.g.position.x.toFixed(2); o.y=+CAR.g.position.y.toFixed(2); o.z=+CAR.g.position.z.toFixed(2); o.r=+CAR.g.rotation.y.toFixed(2); }
   if(g.look!=="real") o.c={top:g.top,topColor:g.topColor,bottom:g.bottom,bottomColor:g.bottomColor,hair:g.hair,hairColor:g.hairColor,skin:g.skin,glasses:g.glasses,hat:g.hat};
-  if(NET.mySay) o.say=NET.mySay; if(NET.myEmo) o.emo=NET.myEmo; if(DUTY.on){ o.staff=1; o.n=(DUTY.name||guestName()).slice(0,20); }
-  const js=JSON.stringify(o); if(js===NET.last) return; NET.last=js; NET.room.presence(o).catch(()=>{});
+  if(NET.mySay&&!mallBackend) o.say=NET.mySay; if(NET.myEmo) o.emo=NET.myEmo; if(DUTY.on&&(!mallBackend||NET.room.canStaff)){ o.staff=1; o.n=(DUTY.name||guestName()).slice(0,20); }
+  const js=JSON.stringify(o); if(js===NET.last) return; NET.last=js; NET.room.presence(o).catch(()=>{ NET.last=""; });
 }
 function updatePeers(dt,T){
   for(const rec of NET.peers.values()){ if(!rec.av) continue;
@@ -1652,10 +1714,13 @@ function updatePeers(dt,T){
   }
   if(avatar&&avatar._say){ avatar._sayT-=dt; if(avatar._sayT<=0){ avatar.g.remove(avatar._say); avatar._say=null; } }
 }
-$("chatInput").addEventListener("keydown",e=>{ e.stopPropagation();
+$("chatInput").addEventListener("keydown",async e=>{ e.stopPropagation();
   if(e.key==="Escape"){ e.target.blur(); return; }
   if(e.key!=="Enter") return; const v=e.target.value.trim().slice(0,160); e.target.value=""; if(!v){ e.target.blur(); return; }
-  NET.mySay={t:v,at:Date.now()}; addChat("You",v); sayBubble(avatar,v); NET.last=""; e.target.blur(); });
+  if(mallBackend){
+    if(!NET.room?.sendChat){ e.target.value=v; toast("Chat is reconnecting. Please try again."); return; }
+    try{ sendPresence(false); await NET.room.sendChat(v); }catch(error){ e.target.value=v; toast(error.message||"Couldn't send message. Try again."); return; }
+  }else NET.mySay={t:v,at:Date.now()}; addChat("You",v,false,DUTY.on&&!!NET.room?.canStaff); sayBubble(avatar,v); NET.last=""; e.target.blur(); });
 
 /* ============ Ask a staff member (AI, in Myanmar) ============ */
 let SAMPLE=null, ASK=null;
@@ -1920,9 +1985,27 @@ function initStats(){
   STATS.doc=`stats/${TODAY}_${anon}_${Math.random().toString(36).slice(2,7)}`; STATS.dirty=true;
 }
 function flushStats(force){ const now=performance.now(); if(!dbApi||!STATS.dirty||(!force&&now-STATS.last<15000)) return; STATS.last=now; STATS.dirty=false;
-  dbApi.doc(STATS.doc).set(STATS.data).catch(()=>{}); }
+  dbApi.doc(STATS.doc).set(STATS.data).catch(e=>{ STATS.dirty=true; console.warn("Visitor stats save failed",e); }); }
 addEventListener("pagehide",()=>flushStats(true));
-async function initStatsPanel(){ if(!window.claude||!window.claude.use) return; let user=null; try{ user=await window.claude.use("user"); }catch(e){} if(!user||!dbApi) return;
+async function initStatsPanel(){
+  if(mallBackend){
+    const {data:session}=await mallBackend.client.auth.getSession();
+    const uid=session.session?.user.id; if(!uid) return;
+    const {data,error}=await mallBackend.client.from("mall_roles").select("role").eq("user_id",uid).maybeSingle();
+    if(error){ console.warn("Role lookup failed",error); return; }
+    if(!data){ if(!session.session.user.is_anonymous) toast("Your account has no Admin/Staff role yet."); return; }
+    initAdmin();
+    const sections=$("admin").querySelectorAll(".adminBody > section");
+    sections.forEach((section,i)=>{ section.classList.toggle("hidden",data.role!=="admin"&&i!==0); });
+    sections[4].classList.add("hidden"); // Asset uploads remain managed in the repository.
+    $("setupBtn").classList.remove("hidden"); $("setupBtn").textContent=data.role==="admin"?"⚙ Admin":"Staff";
+    $("aTitle").nextElementSibling.textContent="Signed in as "+data.role;
+    $("dutyChk").disabled=false; $("dutyName").disabled=false;
+    sections[0].querySelector(".hint").textContent="Go on duty to appear as Linn Staff. Public @staff messages alert you while this tab is open.";
+    if(data.role==="admin") $("statsBtn").classList.remove("hidden");
+    return;
+  }
+  if(!window.claude||!window.claude.use) return; let user=null; try{ user=await window.claude.use("user"); }catch(e){} if(!user||!dbApi) return;
   let ok=false; try{ ok=await user.canEdit(); }catch(e){} if(ok){ $("statsBtn").classList.remove("hidden"); $("setupBtn").classList.remove("hidden"); $("setupBtn").textContent="⚙ Admin"; initAdmin(); } }
 $("statsBtn").onclick=async()=>{ $("stats").classList.add("on"); state.shopping=true; $("statBody").textContent="Loading…";
   try{ const since=new Date(Date.now()-6*864e5).toISOString().slice(0,10); const snap=await dbApi.collection("stats").where("day",">=",since).limit(1000).get();
@@ -2011,7 +2094,7 @@ $("emobar").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(!state.star
 
 /* ============ Bottom bar: walk, overview, chat, shops, help ============ */
 let MODE="walk"; const ROOFS=[];
-function setMode(m){ if(m==="chat"){ if(NET.room) $("chatInput").focus(); else toast("Chat works when the page is opened in Claude"); return; }
+function setMode(m){ if(m==="chat"){ if(NET.room) $("chatInput").focus(); else toast("Online chat unavailable. Please check your connection and reload."); return; }
   if(m==="find"){ $("findBtn").click(); return; } if(m==="help"){ $("help").classList.toggle("off"); return; }
   MODE=m; ROOFS.forEach(r=>r.visible=m!=="overview"); document.querySelectorAll("#navbar button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.m===MODE)); if(m==="overview") toast("Overview · drag to look around"); }
 document.querySelectorAll("#navbar button").forEach(b=>b.onclick=()=>setMode(b.dataset.m));
@@ -2136,6 +2219,11 @@ async function importCatalog(file){
 function applyCatalog(doc){ if(!doc||!doc.corners) return; CATALOG.at=doc.at; CATALOG.count=doc.count;
   for(const [k,list] of Object.entries(doc.corners)) if(Array.isArray(list)&&list.length) PRODUCTS[k]=list.map(x=>({n:String(x.n).slice(0,90),p:+x.p||0,u:safeUrl(x.u),st:x.st})); }
 async function loadShopData(){
+  // Static files remain the initial data until Admin saves a database version.
+  if(mallBackend){
+    try{ const r=await fetch("data/contact.json"); if(r.ok) Object.assign(CONTACT_CFG,await r.json()); }catch(e){}
+    try{ const r=await fetch("data/catalog.json"); if(r.ok) applyCatalog(await r.json()); }catch(e){}
+  }
   if(!dbApi){ if(location.protocol==="file:") return;
     try{ const r=await fetch("data/contact.json"); if(r.ok) Object.assign(CONTACT_CFG,await r.json()); }catch(e){}
     try{ const r=await fetch("data/catalog.json"); if(r.ok){ const d=await r.json(); if(d&&d.corners) applyCatalog(d); } }catch(e){}
@@ -2173,7 +2261,7 @@ $("bkShop").addEventListener("change",()=>{ $("bkContact").innerHTML=contactLink
 $("bkCopy").onclick=async()=>{ try{ await navigator.clipboard.writeText(bookingText()); $("bkMsg").textContent="Copied. Paste it into Viber or Messenger."; }catch(e){ $("bkMsg").textContent="Select and copy the text manually."; } track(d=>{ d.bookings=(d.bookings||0)+1; }); };
 
 /* ============ Live staff ============ */
-const DUTY={on:false,name:""}; try{ Object.assign(DUTY,JSON.parse(localStorage.getItem("linnmall.duty")||"{}")); }catch(e){}
+const DUTY={on:false,name:""}; try{ DUTY.name=String(JSON.parse(localStorage.getItem("linnmall.duty")||"{}").name||"").slice(0,20); }catch(e){}
 function liveStaffCount(){ let n=0; for(const r of NET.peers.values()) if(r.pr&&r.pr.staff) n++; return n; }
 function updateStaffPill(){ const n=liveStaffCount(); $("staffPill").classList.toggle("hidden",!n); $("staffN").textContent=`${n} Linn staff online · tap to ask`; }
 function askLiveStaff(){ if(!NET.room) return; $("chatInput").value="@staff "; $("chatInput").focus(); toast("Type your question for Linn staff"); }
@@ -2183,7 +2271,7 @@ let beepCtx=null; function beep(){ try{ beepCtx=beepCtx||new (window.AudioContex
 /* ============ Admin panel (editors) ============ */
 function initAdmin(){
   $("dutyChk").checked=!!DUTY.on; $("dutyName").value=DUTY.name||"";
-  const saveDuty=()=>{ DUTY.on=$("dutyChk").checked; DUTY.name=$("dutyName").value.trim(); try{ localStorage.setItem("linnmall.duty",JSON.stringify(DUTY)); }catch(e){} NET.last=""; toast(DUTY.on?"You're on duty · customers see you as Linn staff":"Off duty"); };
+  const saveDuty=()=>{ DUTY.on=$("dutyChk").checked; DUTY.name=$("dutyName").value.trim(); try{ localStorage.setItem("linnmall.duty",JSON.stringify({name:DUTY.name})); }catch(e){} NET.last=""; toast(DUTY.on?"You're on duty · customers see you as Linn staff":"Off duty"); };
   $("dutyChk").onchange=saveDuty; $("dutyName").onchange=saveDuty;
   $("cfViber").value=CONTACT_CFG.viber||""; $("cfMessenger").value=CONTACT_CFG.messenger||""; $("cfPhone").value=CONTACT_CFG.phone||"";
   $("cfSave").onclick=async()=>{ const c={viber:$("cfViber").value.trim().slice(0,30),messenger:$("cfMessenger").value.trim().slice(0,60),phone:$("cfPhone").value.trim().slice(0,30)};
@@ -2208,6 +2296,14 @@ function initAdmin(){
 /* ============ Myanmar localisation ============ */
 let LANG=(()=>{ try{ return localStorage.getItem("linnmall.lang")||"my"; }catch(e){ return "my"; } })();
 const MY={
+ "Online mall connected. Enter the mall to appear to others.":"အွန်လိုင်း mall နှင့် ချိတ်ဆက်ထားပါပြီ။ တခြားသူများ မြင်နိုင်ရန် mall ထဲ ဝင်ပါ။",
+ "Mall chat is public. Everyone here can read your messages.":"ဒီ chat က အများသုံးဖြစ်ပြီး mall ထဲရှိသူအားလုံး သင့်စာကို ဖတ်နိုင်ပါတယ်။",
+ "Online chat unavailable. Please reload and try again.":"အွန်လိုင်း chat ချိတ်မရသေးပါ။ Page ကို ပြန်ဖွင့်ပြီး စမ်းကြည့်ပါ။",
+ "Chat is reconnecting. Please try again.":"Chat ပြန်ချိတ်နေပါတယ်။ ခဏနေမှ ထပ်ပို့ပါ။",
+ "Please wait a second before sending again.":"နောက်တစ်စောင် မပို့ခင် တစ်စက္ကန့် စောင့်ပါ။",
+ "Online connection interrupted. Retrying…":"အွန်လိုင်း ချိတ်ဆက်မှု ပြတ်သွားပါတယ်။ ပြန်ချိတ်နေပါတယ်…",
+ "Staff login":"ဝန်ထမ်း ဝင်ရန်", "Sign out":"အကောင့်ထွက်ရန်",
+
  // setup screen
  "Shop 1, Bogyoke Road, Pyinmana. Make your character, then walk in. Our staff are inside to help.":"Shop 1၊ ဗိုလ်ချုပ်လမ်း၊ ပျဉ်းမနား။ ကိုယ့် character ကို ပြင်ဆင်ပြီး ဆိုင်ထဲ ဝင်ပါ။ ဝန်ထမ်းတွေ ကူညီဖို့ အသင့်ရှိပါတယ်။",
  "Your name":"သင့်အမည်","Character":"ဇာတ်ကောင်","Male":"အမျိုးသား","Female":"အမျိုးသမီး","Look":"ပုံစံ","Realistic 3D":"တကယ့်လူပုံ 3D","Custom":"ကိုယ်တိုင် ပြင်ဆင်",
@@ -2405,7 +2501,7 @@ $("go").onclick=()=>{
 
 const fontsReady=Promise.all([document.fonts?document.fonts.load("700 20px 'Saira Semi Condensed'"):0, document.fonts?document.fonts.load("700 20px 'Noto Sans Myanmar'","မင်္ဂလာပါ"):0]).catch(()=>{});
 $("brandLogo").src=LOGO_SRC;
-Promise.race([Promise.all([fontsReady,logoReady]),new Promise(r=>setTimeout(r,2500))]).then(()=>{ buildWorld(); renderOptions(); rebuildGuest(); frame(); initStats(); initAssets().then(()=>{ initStatsPanel(); loadShopData(); }); initRoom(); initSample(); });
+Promise.race([Promise.all([fontsReady,logoReady]),new Promise(r=>setTimeout(r,2500))]).then(()=>{ buildWorld(); renderOptions(); rebuildGuest(); frame(); initStats(); initBackend().then(()=>{ initRoom(); return initAssets(); }).then(()=>{ initStatsPanel(); loadShopData(); }); initSample(); });
 })();
 </script>
 </body>
