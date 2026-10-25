@@ -1,7 +1,7 @@
 # Linn IT Mall · Vercel deploy
 
 ## ပါဝင်တာများ
-- `index.html` – Mall တစ်ခုလုံး (3D, Shop 1 / Shop 3 / Shop 2 ဆိုင် ၃ ဆိုင်, ကား, မြေပုံ, မြန်မာ/English)
+- `index.html` – Mall တစ်ခုလုံး (3D, Shop 1 / Shop 3 / Shop 2 / Shop 4 ဆိုင် ၄ ဆိုင်, ကား, မြေပုံ, မြန်မာ/English)
 - `assets/` – 3D model (.glb), poster, နံရံပုံ, သီချင်း
 - `data/contact.json` – Viber / Messenger / ဖုန်းနံပါတ်
 - `data/catalog.json` – တကယ့်ပစ္စည်းစာရင်း (Claude ထဲက Admin ကနေ import လုပ်ထားတာကို ဒီမှာ ထည့်နိုင်)
@@ -195,3 +195,19 @@ Chrome local sample (2026-10-25, Shop 2 မထည့်မီ), Shop 1 ရှေ
 - Shop 2 multiplayer presence နဲ့ map floor ကို `lib/sites.js` ရဲ့ site/floor စာရင်းနဲ့ validate လုပ်ပါတယ်။ Existing SQL setup ပြီးထားရင် SQL ထပ် run ဖို့ မလိုပါ။ Deploy ပြီးရင် clients အားလုံး refresh လုပ်ပါ။
 
 Validation: `node --test tests/*.test.js`။ Site/floor validation၊ entrance clearance၊ route endpoints / return direction၊ auto-drive lane offsets နဲ့ Shop 2 realtime broadcasts ကို စစ်ထားပါတယ်။
+
+
+## Shop 4 · Myoma Market
+
+- **Pa.(231), Myoma Market, Naypyitaw**။ Setup ဆိုင်ရွေးရာမှ Shop 4 ရွေးနိုင်ပြီး တိုက်ရိုက်စမ်းရန် `http://localhost:3000/?shop=4` ကို ဖွင့်ပါ။
+- မျက်နှာစာကို actual photo အခြေခံ အဖြူရောင် LINN logo panel၊ ငွေရောင် diagonal diamond brand panel၊ မှန်ဝင်ပေါက် ၂ ခုဖြင့် ဆောက်ထားပါတယ်။ Photo board မထည့်ထားပါ။
+- Shop 4 ကို ဆိုင်သေးအချိုး **မျက်နှာစာ 11m × အတွင်းအလျား 24m** ဖြင့် ဆောက်ထားပါတယ်။ အရင် 34m အကျယ် showroom ထက် ကျဉ်းပြီး အတွင်းသို့ ရှည်ဝင်သွားပါတယ်။ မြင့်သော မျက်နှာစာအောက်မှာ **တစ်ထပ်တည်း၊ zone ၄ ခု** ပါပါတယ်။ ရှေ့ဘယ်ဘက် Mobile/Accessories၊ နောက်ဘယ်ဘက် Mobile/Computer/Printer Service နဲ့ customer waiting၊ ရှေ့ညာဘက် Computer/IT၊ နောက်ညာဘက် TV/Audio/Home Appliances ပါပါတယ်။ Upper facade သည် signage ဖြစ်ပြီး နောက်တစ်ထပ်၊ lift၊ escalator မပါပါ။
+- Service panel၊ ထိုင်နိုင်သော waiting seats၊ product corners၊ staff၊ coupons၊ customer parking နဲ့ multiplayer location ပါပါတယ်။ ရှိပြီးသား catalog/admin နဲ့ Supabase SQL ကို ဆက်သုံးပါတယ်။ SQL အသစ် run ရန် မလိုပါ။ Clients အားလုံး refresh လုပ်ရန် လိုပါတယ်။
+- **Shop 2 ↔ Shop 4** ကို manual/auto ကားဖြင့် သွားနိုင်ပါတယ်။ Area map မှာ Taungnyo Road / Myoma Market route ကို စိမ်းပြာရောင်နဲ့ ပြထားပြီး ပေးထားသော route screenshot ကို virtual world အတွက် အကွာအဝေးချုံ့၍ အခြေခံထားပါတယ်။ Lake နဲ့ market approach သည် virtual landmarks ဖြစ်ပြီး live GPS / traffic times မဟုတ်ပါ။
+- Shop 1 → Shop 4 ကို Shop 3၊ Shop 2 မှာ တစ်ဆင့်စီ ပြောင်းစီးရပါတယ်။ Navigation က ဆိုင်အဆင့်များစွာရှိသော လမ်းကြောင်းကို ရှာနိုင်ပါတယ်။ Shop 4 မှ Shop 2 ကို ပြန်မောင်းနိုင်ပါတယ်။ Auto ကားသည် လမ်းဆုံသို့ ရောက်လာမည့် traffic ကို ကြိုစောင့်ပြီး၊ နောက်က လိုက်လာသည့် ကားကြောင့် ရှေ့ကားက ပြန်ရပ်စောင့်ခြင်းကို ရှောင်ထားပါတယ်။ Route traffic ကို ဆိုင်အနီးလမ်းဆုံများမှ ခွာထားပြီး city street traffic ကို သီးခြားထားပါတယ်။
+
+Validation: `node --test tests/*.test.js` တွင် Shop 4 entrance/floor validation၊ zone ၄ ခုနှင့် waiting area လမ်းလျှောက်ရောက်နိုင်မှု၊ several-hop routing၊ realtime shop transfer စစ်ထားပါတယ်။ Actual Three.js r128 curve တွင် လမ်းကြောင်းတစ်ခုလျှင် သွား/ပြန် sample 2001 ခုစီ car hull ကို shop buildings / parked vehicles မတိုက်အောင် သီးခြားစစ်ထားပါတယ်။ Physical phone GPU test မဟုတ်ပါ။
+
+Shop 4 browser verification: Shop 2 → Shop 4 auto ခရီးကို Skip မသုံးဘဲ ရောက်နိုင်ခြင်း၊ right IT entrance / product drawer၊ left entrance မှ rear Service panel သို့ တိုက်ရိုက်လမ်းလျှောက်ခြင်း၊ waiting seat ထိုင်/ထခြင်း၊ 390×844 Lite viewport နဲ့ mobile controls ကို စမ်းထားပါတယ် (ကျယ်သော layout မူကွဲပေါ်က checks)။ Narrow layout အတွက် entrance/aisle/standing clearance regression checks ကို ပြန်စစ်ပါတယ်။ Traffic ကို စတင်ချိန် ၅ မျိုးဖြင့် သွား/ပြန် simulation စမ်းပြီးပါပြီ။ Native Shop 4 → Shop 2 browser ခရီးအပြည့်ကို နောက်ဆုံးပြင်ပြီးနောက် ထပ်မစမ်းရသေးပါ။
+
+Narrow Shop 4 verification: အလယ် aisle ကနေ rear Service counter သို့ လမ်းလျှောက်ရောက်နိုင်ခြင်း၊ Service panel၊ two-seat waiting bench ထိုင်/ထခြင်းကို browser မှာ ပြန်စမ်းထားပါတယ်။ Floor map၊ walking/car collision bounds နဲ့ scene culling တို့သည် 11×24m footprint ကို သုံးပါတယ်။

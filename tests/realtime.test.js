@@ -228,3 +228,14 @@ test('Shop 2 guests retain their shop and ground floor across realtime movement 
   peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,2);assert.equal(peer.presence.f,0);assert.equal(peer.presence.x,-299);
   assert.equal(a.peers().find(p=>!p.sameTab).presence.f,2);a.close();b.close();
 });
+
+test('guests transferring from Shop 2 to Shop 4 broadcast the new site without a reconnect',async()=>{
+  const net=network(),a=net.make(net.client(A),A,TA),b=net.make(net.client(B),B,TB);
+  await tick();await a.presence({...state('Traveller'),site:2,f:0,x:-300,z:-180});await b.presence({...state('Myoma guest'),site:4,f:0,x:-623.5,z:-303});await tick();
+  assert.equal(a.peers().find(p=>!p.sameTab).presence.site,4);
+  net.advance(250);await a.presence({...state('Traveller'),site:4,f:0,x:-623,z:-315});
+  let peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,4);assert.equal(peer.presence.x,-623);assert.equal(peer.presence.f,0);
+  net.advance(250);await a.presence({...state('Traveller'),site:4,f:1,x:-623,z:-316});
+  peer=b.peers().find(p=>!p.sameTab);assert.equal(peer.presence.site,4);assert.equal(peer.presence.f,0);
+  a.close();b.close();
+});

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { advanceCar, findCarContact, boxContact, CAR_HULL, drivingSpeed } from '../lib/driving.js';
+import { advanceCar, findCarContact, boxContact, CAR_HULL, drivingSpeed, autoDriveMustYield, waitsForAutoCrossing } from '../lib/driving.js';
 const pose = { x:0,z:0,h:0,y:0,speed:0 };
 const wall = { x:0,z:6,halfWidth:10,halfLength:0.08,height:10 };
 
@@ -50,4 +50,26 @@ test('braking stops without reversing, and opposite throttle brakes before rever
   assert.equal(drivingSpeed(-0.1,0,true,0.05),-0);
   assert.ok(drivingSpeed(10,-1,false,0.05)>0);
   assert.ok(drivingSpeed(10,-1,false,0.05)<drivingSpeed(10,0,false,0.05));
+});
+
+
+test('auto rides yield before entering cross traffic and still fit parked bays',()=>{
+  const crossing={x:0,z:5,h:Math.PI/2,y:0};
+  assert.equal(findCarContact(pose,{vehicles:[crossing]}),null,'physical hulls are still clear');
+  assert.equal(autoDriveMustYield(pose,[crossing]),true,'wait before blocking the crossing lane');
+  assert.equal(autoDriveMustYield(pose,[{...crossing,x:10}]),false,'resume when the crossing clears');
+  assert.equal(autoDriveMustYield(pose,[{x:3.6,z:0,h:0,y:0,parked:true}]),false,'marked adjacent bay remains usable');
+  assert.equal(autoDriveMustYield({...pose,y:4},[crossing]),false,'flying cars do not block ground traffic');
+  assert.equal(autoDriveMustYield(pose,[{x:3.4,z:0,h:Math.PI,y:0}]),false,'opposite road lanes remain separate');
+  assert.equal(autoDriveMustYield(pose,[{x:0,z:-6,h:0,y:0,velocity:{x:0,z:9}}]),false,'a following car must not make the lead auto car stop');
+  assert.equal(autoDriveMustYield(pose,[{x:0,z:-4,h:0,y:0}]),true,'physical overlaps still block even behind the player');
+  assert.equal(autoDriveMustYield(pose,[{x:-12,z:5,h:Math.PI/2,y:0,velocity:{x:9,z:0}}]),true,'forecast approaching cross traffic before entering the lane');
+});
+
+
+test('street crossings let existing traffic clear while stopping new arrivals outside the auto route',()=>{
+  const corridor=[{x:0,z:0,h:0},{x:0,z:4,h:0}];
+  assert.equal(waitsForAutoCrossing({x:5,z:1,h:Math.PI/2},{x:4,z:1,h:Math.PI/2},corridor),true);
+  assert.equal(waitsForAutoCrossing({x:0,z:1,h:Math.PI/2},{x:-1,z:1,h:Math.PI/2},corridor),false);
+  assert.equal(waitsForAutoCrossing({x:8,z:1,h:Math.PI/2},{x:7,z:1,h:Math.PI/2},corridor),false);
 });

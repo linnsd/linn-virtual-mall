@@ -39,3 +39,11 @@ test('batching excludes glass, movable doors, visibility-controlled roofs and mi
   for(const changed of [{userData:{...box.userData,dynamic:true}},{userData:{...box.userData,noBatch:true}},{material:{transparent:true,opacity:.2}},{scale:{x:-1,y:1,z:1}},{userData:{staticBox:[0,2,3]}}])
     assert.equal(canBatchBox({...box,...changed}),false);
 });
+
+test('compact Shop 4 culling uses the narrow walls and full interior depth',async()=>{
+  const {SITES}=await import('../lib/sites.js'),s=SITES[4];
+  const rear=classifyBounds(bounds([s.ox-.5,.1,s.oz-23.3],[s.ox,2,s.oz-22.8]),SITES);
+  assert.equal(rear.site,4);assert.equal(rear.floor,0,'deep rear fixtures belong to the ground floor');
+  const neighbour=classifyBounds(bounds([s.ox+6,.1,s.oz-5],[s.ox+6.5,2,s.oz-4.5]),SITES);
+  assert.equal(neighbour.site,null,'neighbouring market units are outside the narrow shop');
+});
