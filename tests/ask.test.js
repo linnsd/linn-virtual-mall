@@ -50,3 +50,27 @@ test('legacy service-role JWTs use authorization while quota service errors rema
     assert.equal(options.headers.Authorization,`Bearer ${key}`);return {ok:false};
   }}),/unavailable/);
 });
+
+test('all malformed request bodies fail safely before shared quota or provider calls', async () => withEnvironment(async()=>{
+  globalThis.fetch=async()=>assert.fail('Malformed input must not reach quota or upstream');
+  const valid=request().body.messages[0];
+  const bodies=[undefined,null,42,[],{},'{broken',JSON.stringify({messages:[null]}),{messages:'invalid'},{messages:[null]},
+    {messages:[[]]},{messages:[{role:'user',content:{text:'invalid'}}]},{messages:[{role:'system',content:'invalid'}]},
+    {messages:[valid,{role:'assistant',content:'   '}]},{messages:[{...valid,content:'x'.repeat(14001)}]},
+    {messages:[valid,{role:'assistant',content:'x'.repeat(14000)},{role:'user',content:'x'.repeat(14000)}]},
+    {messages:Array.from({length:10},()=>valid)},{messages:[valid,null]}];
+  for (const body of bodies) {
+    const req=request();req.body=body;const res=response();await handler(req,res);
+    assert.equal(res.code,400,JSON.stringify(body)?.slice(0,100));assert.deepEqual(res.body,{error:'bad_request'});
+  }
+  // Invalid input is still 400 if server credentials are temporarily absent.
+  delete process.env.ANTHROPIC_API_KEY;
+  const req=request();req.body={messages:[null]};const res=response();await handler(req,res);assert.equal(res.code,400);
+}));
+
+test('valid serialized JSON requests still reach the provider and malformed upstream responses return 502', async () => withEnvironment(async()=>{
+  let calls=0;globalThis.fetch=async()=>{calls++;return calls%2===1?{ok:true,json:async()=>({allowed:true})}:{ok:true,json:async()=>({content:[null,{type:'image'},{type:'text',text:'Hello'}]})};};
+  const req=request();req.body=JSON.stringify(req.body);const res=response();await handler(req,res);assert.equal(res.code,200);assert.equal(res.body.text,'Hello');
+  calls=0;globalThis.fetch=async()=>{calls++;return calls===1?{ok:true,json:async()=>({allowed:true})}:{ok:true,json:async()=>({content:{bad:'shape'}})};};
+  const bad=response();await handler(request(),bad);assert.equal(bad.code,502);
+}));

@@ -1537,6 +1537,9 @@
       color: #58677a; font-weight: 700; font-size: 15px
     }
     .auth-tabs button[aria-pressed="true"] { background: #fff; color: #176e32; box-shadow: 0 1px 4px #10243b12 }
+    .auth-help { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px }
+    .auth-help button { border: 0; background: transparent; color: #206f39; padding: 8px 0; min-height: 40px; font-size: 13px }
+    .auth-help button:hover { text-decoration: underline }
     .auth-google {
       display: flex; justify-content: center; align-items: center; gap: 12px;
       min-height: 48px; width: 100%; padding: 10px 16px; border: 1px solid #ccd6e0;
@@ -2148,7 +2151,7 @@
       type="button">Set up 3D assets</button><button id="festBtn" type="button" title="Thadingyut festival night">🏮
       <span class="lbl">Night</span></button><button id="fsBtn" type="button" title="Full screen">⛶</button><button
       id="music" aria-pressed="true"><span class="eq" aria-hidden="true"><i></i><i></i><i></i></span><span
-        class="lbl">Music</span></button><button id="nextTrack" type="button" title="Next song" aria-label="Next song">⏭
+        class="lbl">Music</span></button><button type="button" id="stageBtn" title="Find the touring Linn stage">🎤 Stage · Shop 3</button><button id="nextTrack" type="button" title="Next song" aria-label="Next song">⏭
       <span class="lbl">Skip song</span></button><span id="musicStatus" class="sr-only" role="status"></span>
     <details id="moreTools" class="more-tools" hidden>
       <summary aria-label="More controls">⋯</summary>
@@ -2467,6 +2470,8 @@
     import { buildShop4 } from './lib/shop4.js';
     import { rollingModel, cloneRollingModel, rollWheels, steerWheels } from './lib/rolling-model.js';
     import { buildRoadside } from './lib/roadside.js';
+    import { buildStageShow } from './lib/stage-show.js';
+    import { stageStop, stageMustYield } from './lib/stage-tour.js';
     import { BIKE_HULL, bikeParkingFor, bikeRoutePoints, canParkBike } from './lib/riding.js';
     import { createVehicleFactory } from './lib/vehicles.js';
     import { buildShop5, shop5GroundHeight } from './lib/shop5.js';
@@ -2485,7 +2490,7 @@
       let LITE = QUALITY !== "hd", contextLost = false;
       function layoutTools() {
         const compact = innerWidth <= 1024 || isTouch, extra = $("toolExtras"), menu = $("moreTools"), tools = $("langBtn").parentElement;
-        for (const id of ["accountBtn", "findBtn", "statsBtn", "setupBtn", "festBtn", "fsBtn", "music", "nextTrack"]) { const el = $(id); if (el) (compact ? extra : tools).append(el); }
+        for (const id of ["accountBtn", "stageBtn", "findBtn", "statsBtn", "setupBtn", "festBtn", "fsBtn", "music", "nextTrack"]) { const el = $(id); if (el) (compact ? extra : tools).append(el); }
         menu.hidden = !compact;
       }
       layoutTools();
@@ -2749,6 +2754,7 @@
             <label>Password<span class="auth-password"><input name="password" type="password" minlength="6" autocomplete="current-password" placeholder="သင့် password ထည့်ပါ" required><button type="button" data-password aria-label="Show password" aria-pressed="false">Show</button></span></label>
             <p class="auth-note" data-note>Staff / Admin account များလည်း ဒီနေရာမှ ဝင်နိုင်ပါတယ်။</p>
           </div>
+          <div class="auth-help"><button type="button" data-forgot>Forgot password?</button><button type="button" data-resend>Resend confirmation email</button></div>
           <p class="auth-message" role="status" aria-live="polite"></p>
           <button class="auth-primary" type="submit">Login ဝင်ရန်</button>
           <button type="button" class="auth-guest" data-close>Guest အနေနဲ့ ဆက်ကြည့်မည် →</button>
@@ -2756,8 +2762,31 @@
         document.body.append(dialog);
         const form = dialog.querySelector("form"), message = form.querySelector('[role="status"]'), submit = form.querySelector('[type="submit"]'), loginTab = form.querySelector('[data-login]'), registerTab = form.querySelector('[data-register]');
         const google = form.querySelector('[data-google]');
+        const forgot = form.querySelector('[data-forgot]'), resend = form.querySelector('[data-resend]');
+        let emailDialog = null;
+        function clearRecoveryReturn() {
+          const url = new URL(location.href);
+          if (url.searchParams.get("account") === "recovery") url.searchParams.delete("account");
+          history.replaceState(null, "", url.pathname + url.search + url.hash);
+        }
+        async function openEmailFlow(action) {
+          if (!mallBackend) { message.textContent = "Account connection unavailable. Please reload."; return; }
+          try {
+            if (!emailDialog) {
+              const { createEmailAuthDialog } = await import("./supabase/email-auth-ui.js");
+              emailDialog = createEmailAuthDialog({
+                client: mallBackend.client, pageUrl: location.href,
+                onBack: () => { clearRecoveryReturn(); open(); },
+                onComplete: () => { clearRecoveryReturn(); location.reload(); },
+              });
+            }
+            if (dialog.open) { if (typeof dialog.close === "function") dialog.close(); else dialog.removeAttribute("open"); }
+            emailDialog.open(action, form.elements.email.value, !!mallBackend.recovery?.verified);
+          } catch (e) { message.textContent = "Email help မဖွင့်နိုင်ပါ။ ပြန်ကြိုးစားပါ။"; }
+        }
+        forgot.onclick = () => openEmailFlow("forgot"); resend.onclick = () => openEmailFlow("resend");
         function setBusy(busy) {
-          submit.disabled = loginTab.disabled = registerTab.disabled = google.disabled = busy;
+          submit.disabled = loginTab.disabled = registerTab.disabled = google.disabled = forgot.disabled = resend.disabled = busy;
           form.setAttribute("aria-busy", String(busy));
         }
         google.onclick = async () => {
@@ -2776,7 +2805,7 @@
           form.querySelector("#authTitle").textContent = memberUser ? "My account" : mode ? "Join the coupon hunt" : "Welcome back";
           form.querySelector("[data-description]").textContent = memberUser ? memberUser.email : mode ? "အကောင့်ဖွင့်ပြီး ဆိုင်ထဲက coupon တွေကို လိုက်စုဆောင်းပါ။" : "Account ဝင်ပြီး သင့် coupon တွေကို ဆက်လက်စုဆောင်းပါ။";
           form.querySelector("[data-note]").textContent = mode ? "Password အနည်းဆုံး ၆ လုံး သုံးပါ။ Email အတည်ပြုရန် လိုအပ်နိုင်ပါတယ်။" : "Staff / Admin account များလည်း ဒီနေရာမှ ဝင်နိုင်ပါတယ်။";
-          for (const el of [form.querySelector(".auth-tabs"), form.querySelector(".auth-fields"), google, form.querySelector(".auth-divider"), submit]) el.hidden = !!memberUser;
+          for (const el of [form.querySelector(".auth-tabs"), form.querySelector(".auth-fields"), google, form.querySelector(".auth-divider"), form.querySelector(".auth-help"), submit]) el.hidden = !!memberUser;
           form.elements.email.disabled = form.elements.password.disabled = !!memberUser;
           form.elements.password.type = "password";
           form.querySelector("[data-password]").textContent = "Show";
@@ -2809,7 +2838,8 @@
           setBusy(true); message.textContent = registering ? "Registering…" : "Signing in…";
           try {
             const credentials = { email: form.elements.email.value.trim(), password: form.elements.password.value };
-            const { data, error } = registering ? await mallBackend.client.auth.signUp(credentials) : await mallBackend.client.auth.signInWithPassword(credentials);
+            const { authReturnUrl } = await import("./supabase/auth.js");
+            const { data, error } = registering ? await mallBackend.client.auth.signUp({ ...credentials, options: { emailRedirectTo: authReturnUrl(location.href) } }) : await mallBackend.client.auth.signInWithPassword(credentials);
             if (error) throw error;
             if (data.session) { location.reload(); return; }
             message.textContent = "Email ထဲက confirmation link ကို နှိပ်ပြီး Login ဝင်ပါ။";
@@ -2817,7 +2847,8 @@
           } catch (e) { message.textContent = e.message || "Couldn't sign in"; }
           finally { setBusy(false); }
         };
-        if (oauthFailed) { open(); message.textContent = "Google sign-in မပြီးဆုံးပါ။ ပြန်ကြိုးစားပါ သို့မဟုတ် email နဲ့ ဝင်ပါ။"; }
+        if (mallBackend?.recovery?.requested) openEmailFlow("reset");
+        if (oauthFailed && !mallBackend?.recovery?.requested) { open(); message.textContent = "Google sign-in မပြီးဆုံးပါ။ ပြန်ကြိုးစားပါ သို့မဟုတ် email နဲ့ ဝင်ပါ။"; }
         if (mallBackend) (async () => {
           try {
             const { isRegisteredUser, createCouponStore } = await import("./supabase/coupons.js");
@@ -3089,7 +3120,7 @@
           if (holes.some(o => cx > o[0] && cx < o[1] && cz > o[2] && cz < o[3])) continue; B(cx + ox, y, cz + oz, xs[i + 1] - xs[i], h, zs[j + 1] - zs[j], m);
         }
       }
-      let robot, lift, sceneOptimizer, lanternBatches, shop5Hall, roadScenery;
+      let robot, lift, sceneOptimizer, lanternBatches, shop5Hall, roadScenery, stageShow;
       function tileTex() {
         const t = canvasTex(256, 256, (g, W, H) => { g.fillStyle = "#efede8"; g.fillRect(0, 0, W, H); g.fillStyle = "#e6e3dc"; g.fillRect(0, 0, W / 2, H / 2); g.fillRect(W / 2, H / 2, W / 2, H / 2); g.strokeStyle = "#d3cfc6"; g.lineWidth = 2; for (let i = 0; i <= 2; i++) { g.beginPath(); g.moveTo(i * W / 2, 0); g.lineTo(i * W / 2, H); g.stroke(); g.beginPath(); g.moveTo(0, i * H / 2); g.lineTo(W, i * H / 2); g.stroke(); } });
         t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(17, 11); return t;
@@ -3158,6 +3189,8 @@
         [2, 0, -12, -11], [2, 0, 1, -10], [2, 0, 13, -12], [4, 0, -1.5, -10], [4, 0, 1, -13], [4, 0, -.8, -18], [4, 0, 2.7, -18], [5, 0, -4, -4], [5, 0, -4, -13], [5, 0, 4, -10], [5, 0, -12, -20], [5, 0, 10, -19], [3, 0, -1, -8], [3, 0, 12, -12], [3, 0, -12, -9], [3, 1, 4, -12], [3, 1, -14, -16], [3, 2, 12.45, -18.2]].forEach(a => couponAt(...a));
         applyQuality(QUALITY);
         buildTraffic(); buildFestival();
+        stageShow = buildStageShow({ THREE, scene, canvasTex, drawLogo, quality: QUALITY });
+        stageShow.update(0, 0, state);
         for (const roof of ROOFS) roof.userData.noBatch = true;
         sceneOptimizer = optimizeScene(THREE, scene, { sites: SITES, floorHeight: F2, batching: PERF_OPTIONS.batching, culling: PERF_OPTIONS.culling, dynamicGroups: LANTERNS.map(l => l.g), wells: WELLS });
         if (PERF_OPTIONS.batching) lanternBatches = batchAnimatedParts(THREE, scene, LANTERNS.map(l => l.g));
@@ -3496,7 +3529,8 @@
         b(0, -0.02, 16, 120, 0.03, 12, 0x5d636b); for (let x = -56; x < 60; x += 8) b(x, 0.01, 16, 4, 0.01, 0.25, 0xf2f2f2);
         b(0, 0, 5, 120, 0.08, 10, 0xb9b2a6); b(0, 0, -11, 120, 0.04, 24, 0xc9c3b8);
         b(-31, 0, -11, 22, 6, 20, 0xe8d9bf); b(-31, 6, -11, 22.4, 0.4, 20.4, 0xa0533c); b(31, 0, -11, 22, 9, 20, 0xdfe4ea); b(31, 9, -11, 22.4, 0.4, 20.4, 0x7f8b96);
-        for (const x of [-24, -8, 18, 26]) tree(x + ox, 8.6 + oz);
+        // Keep the Shop 3 performance apron clear of the touring stage and crowd.
+        for (const x of [-24, 18, 26]) tree(x + ox, 8.6 + oz);
         // shell: three floors, lift shaft opening in the slabs
         const WA = escWell({ ox, oz, site: 3, f0: 0, upLabel: "Escalator up to 2F", upSub: "IT & Apple Devices", downLabel: "Escalator down to 1F", downSub: "Mobile Phone & Accessories" });
         const WB = escWell({ ox, oz, site: 3, f0: 1, x0: -12.9, x1: -8.7, upLabel: "Escalator up to 3F", upSub: "Computer Training Center", downLabel: "Escalator down to 2F", downSub: "IT & Apple Devices" });
@@ -3531,7 +3565,7 @@
         // entrance
         pl(sign("Welcome", "#1746C9", "#ffffff", "to Shop 3", 512, 192), 3, 1.1, 4, 0.1, 1.4).rotation.x = -Math.PI / 2;
         pl(sign("vivo", "#2a5bd7", "#ffffff", "New arrivals", 256, 512), 1, 2, -0.5, 1.05, 1.6, 0.25); pl(sign("OPPO", "#1e7b3a", "#ffffff", "New arrivals", 256, 512), 1, 2, 9.4, 1.05, 1.6, -0.25);
-        plant(6.8 + ox, 1.2 + oz, 0); scooter(-5.5 + ox, 3.2 + oz, 0.3); scooter(12.6 + ox, 3.1 + oz, 0.1);
+        plant(6.8 + ox, 1.2 + oz, 0); scooter(-20 + ox, 3.2 + oz, 0.3); scooter(12.6 + ox, 3.1 + oz, 0.1);
 
         // ---- 1F: Mobile Phone & Accessories ----
         [["samsung", "Samsung", "#1428a0", "#ffffff"], ["oppo", "OPPO", "#1e7b3a", "#ffffff"], ["vivo", "vivo", "#2a5bd7", "#ffffff"], ["xiaomi", "Xiaomi", "#ff6900", "#ffffff"], ["huawei", "HUAWEI", "#d22630", "#ffffff"], ["tecno", "TECNO", "#1f4fd0", "#ffffff"]]
@@ -3977,6 +4011,7 @@
           halfWidth: v.kind === "bike" ? 0.45 : CAR_HULL.halfWidth, halfLength: v.kind === "bike" ? 1.1 : CAR_HULL.halfLength,
           velocity: { x: Math.sin(v.mesh.g.rotation.y) * (v.parked || v.stopped ? 0 : v.speed), z: Math.cos(v.mesh.g.rotation.y) * (v.parked || v.stopped ? 0 : v.speed) }
         }));
+        if (stageShow) vehicles.push({ ...stageShow.hull(), kind: "stage-show" });
         for(const m of MOTORS.values())if(m!==state.drive?.vehicleRef&&!(state.drive?.vehicle==="bike"&&m.home===state.drive.to))vehicles.push({...BIKE_HULL,x:m.g.position.x,z:m.g.position.z,h:m.g.rotation.y,y:0,parked:true,velocity:{x:0,z:0}});
         for (const rec of NET.peers.values()) if (rec.d && rec.car) vehicles.push({ ...(rec.pr.v==="bike"?BIKE_HULL:{}), x: rec.x, z: rec.z, h: rec.rot, y: rec.y, height: rec.car.g.userData.vehicle?.height || CAR_HULL.height });
         if(state.drive?.vehicle==="bike")vehicles.push({...CAR_HULL,x:CAR.g.position.x,z:CAR.g.position.z,h:CAR.g.rotation.y,y:0,parked:true,velocity:{x:0,z:0}});
@@ -4210,7 +4245,8 @@
       }
 
       function blocked(x, z, f, site = state.site) {
-        const r = 0.35, S = SITES[site]; if (!S || !S.floors[f]) return true; const lx = x - S.ox, lz = z - S.oz, half = (S.width || 34) / 2, depth = S.depth || 22;
+        const r = 0.35, S = SITES[site];
+        if (f === 0 && stageShow && boxContact({ x, z, h: 0, halfWidth: r, halfLength: r }, stageShow.hull())) return true; if (!S || !S.floors[f]) return true; const lx = x - S.ox, lz = z - S.oz, half = (S.width || 34) / 2, depth = S.depth || 22;
         if (f >= 1) { if (lz > -0.6 || lz < -depth + .4 || lx < -half + .4 || lx > half - .4) return true; }
         else if (lz > -0.45 && lz < 0.45) { if (!entranceOpen(S, lx, r)) return true; }
         else if (lz <= -0.45) { if (lx < -half + .4 || lx > half - .4 || lz < -depth + .4) return true; }
@@ -4262,6 +4298,13 @@
       let toastT; function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("on"), 2400); }
       let musicOn = true; $("music").onclick = () => Music.toggle(!musicOn);
       $("nextTrack").onclick = () => { Music.next(); toast($("musicStatus").textContent); };
+      $("stageBtn").onclick = () => {
+        if (!state.started || !stageShow) return;
+        $("moreTools").open = false;
+        const show = stageShow.state(), stop = stageStop(show.performing ? show.site : show.next);
+        setNav({ id: "stage", name: "Linn Live Stage", site: stop.site, floor: 0, x: stop.x, z: stop.z + 6.2 });
+        toast(show.performing ? `🎤 Live performance · Shop ${show.site}` : `🎤 Stage truck travelling to Shop ${show.next}`);
+      };
 
 
       function setSit(av, on) {
@@ -4827,6 +4870,15 @@ ${lines.join("\n")}`;
         }
         TRAFFIC.forEach(v => v.useModel && v.useModel()); updateTraffic(0, 0);
       }
+      function stageTrafficBlocked(pose) {
+        const vehicles = TRAFFIC.map(v => ({ ...CAR_HULL, x: v.mesh.g.position.x, z: v.mesh.g.position.z, h: v.mesh.g.rotation.y, parked: !!v.parked || v.stageYield > .95,
+          velocity: { x: Math.sin(v.mesh.g.rotation.y) * (v.parked || v.stopped ? 0 : v.speed), z: Math.cos(v.mesh.g.rotation.y) * (v.parked || v.stopped ? 0 : v.speed) } }));
+        if (stageMustYield(pose, vehicles)) return true;
+        if (state.started && !state.drive && state.f === 0 && boxContact(pose, { x: state.x, z: state.z, h: 0, halfWidth: .5, halfLength: .5 })) return true;
+        if (state.drive && state.y < 5.6) { const v = activeRide(); if (boxContact(pose, { ...(state.drive.vehicle === "bike" ? BIKE_HULL : CAR_HULL), x: v.g.position.x, z: v.g.position.z, h: v.g.rotation.y })) return true; }
+        for (const peer of NET.peers.values()) if (peer.d && peer.car && peer.y < 5.6 && boxContact(pose, { ...(peer.pr?.v === "bike" ? BIKE_HULL : CAR_HULL), x: peer.x, z: peer.z, h: peer.rot })) return true;
+        return false;
+      }
       function trafficBlocked(vehicle, x, z, h) {
         const hull = { ...CAR_HULL, x, z, h }, ahead = { ...hull, x: x + Math.sin(h) * 1.5, z: z + Math.cos(h) * 1.5 };
         if (vehicle.street && state.drive && !state.drive.manual && state.drive.corridor && waitsForAutoCrossing({ x: vehicle.mesh.g.position.x, z: vehicle.mesh.g.position.z, h: vehicle.mesh.g.rotation.y }, hull, state.drive.corridor)) return true;
@@ -4834,6 +4886,10 @@ ${lines.join("\n")}`;
           const V=activeRide(),player = { ...(state.drive.vehicle==="bike"?BIKE_HULL:CAR_HULL), x: V.g.position.x, z: V.g.position.z, h: V.g.rotation.y };
           const autoYielding = !state.drive.manual && state.drive.blockedFor > .2;
           if (boxContact(hull, player) || (!autoYielding && boxContact(ahead, player))) return true;
+        }
+        if (stageShow) {
+          const truck = stageShow.hull();
+          if (boxContact(hull, truck) || (!stageShow.yielding() && boxContact(ahead, truck))) return true;
         }
         for (const other of TRAFFIC) {
           if (other === vehicle) continue; const p = other.mesh.g.position;
@@ -4844,28 +4900,38 @@ ${lines.join("\n")}`;
         return false;
       }
       function updateTraffic(dt, T) {
+        const parade = stageShow?.corridor() || [];
         for (const v of TRAFFIC) {
           if (v.parked) continue; const g = v.mesh.g;
+          const pullOver = parade.some(p => Math.hypot(p.x - g.position.x, p.z - g.position.z) < 22);
+          v.stageYield = Math.max(0, Math.min(1, (v.stageYield || 0) + (pullOver ? 1 : -1) * dt * .5));
+          const stepDt = v.stageYield > .95 ? dt * .22 : v.stageYield > .01 ? 0 : dt;
           let x, z, h, nextU, nextX;
           if (v.route) {
             const path = v.path || ROUTE;
             const begin = path.trafficStart ?? .22, span = (path.trafficEnd ?? .70) - begin;
-            nextU = begin + ((v.u - begin + v.dir * v.speed * dt / path.len + span) % span);
+            nextU = begin + ((v.u - begin + v.dir * v.speed * stepDt / path.len + span) % span);
             const p = path.curve.getPointAt(nextU), tg = path.curve.getTangentAt(nextU);
             // Lane offsets use the same route normal for BOTH travel directions.
-            x = p.x - tg.z * v.lane; z = p.z + tg.x * v.lane;
+            const lane = v.lane * (1 - v.stageYield) + Math.sign(v.lane) * 7.5 * v.stageYield;
+            x = p.x - tg.z * lane; z = p.z + tg.x * lane;
             h = Math.atan2(tg.x * v.dir, tg.z * v.dir);
           } else {
-            const S = SITES[v.street]; nextX = v.x + v.dir * v.speed * dt;
+            const S = SITES[v.street]; nextX = v.x + v.dir * v.speed * stepDt;
             if (nextX > S.ox + 17) nextX = S.ox - 60; if (nextX < S.ox - 60) nextX = S.ox + 17;
-            x = nextX; z = v.z; h = v.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
+            x = nextX; z = v.z + (S.oz + 27 - v.z) * v.stageYield; h = v.dir > 0 ? Math.PI / 2 : -Math.PI / 2;
           }
           let stop = dt > 0 && trafficBlocked(v, x, z, h);
+          if (v.stageYield > .01) {
+            const shoulderPose = { ...CAR_HULL, x, z, h };
+            stop = stageShow && !!boxContact(shoulderPose, stageShow.hull());
+            if (state.drive && state.y < 2) { const ride = activeRide(); stop ||= !!boxContact(shoulderPose, { ...(state.drive.vehicle === "bike" ? BIKE_HULL : CAR_HULL), x: ride.g.position.x, z: ride.g.position.z, h: ride.g.rotation.y }); }
+          }
           if (v.street && Math.abs(state.z - v.z) < 2 && state.site === v.street && !state.drive) { const ahead = (state.x - v.x) * v.dir; if (ahead > 0 && ahead < 6) stop = true; }
-          v.stopped = stop;
+          v.stopped = stop || (v.stageYield > .01 && v.stageYield <= .95);
           if (!stop) { if (v.route) v.u = nextU; else v.x = nextX; g.position.set(x, 0, z); g.rotation.y = h; }
           g.visible = QUALITY !== "low" || Math.hypot(g.position.x - state.x, g.position.z - state.z) < 65;
-          if (!stop && v.mesh.wheels) for (const w of v.mesh.wheels) w.spin.rotation.x += v.speed * dt / 0.38;
+          if (!stop && v.mesh.wheels) for (const w of v.mesh.wheels) w.spin.rotation.x += v.speed * stepDt / 0.38;
         }
       }
 
@@ -5286,6 +5352,12 @@ ${lines.join("\n")}`;
         const cpuStart = PERF_OPTIONS.enabled ? performance.now() : 0;
         const elapsed = clock.getDelta(), dt = Math.min(elapsed, 0.05), T = performance.now() / 1000;
         shop5Hall?.update(dt, state, NET.peers.values()); updateRideStations();
+        if (stageShow) {
+          stageShow.setQuality(QUALITY);
+          const show = stageShow.update(state.started ? dt : 0, T, state, stageTrafficBlocked);
+          const label = show.performing ? `🎤 Stage · Shop ${show.site}` : `🎤 Stage → Shop ${show.next}`;
+          if ($("stageBtn").textContent !== label) $("stageBtn").textContent = label;
+        }
         if (ROUTE.curve) updateTraffic(dt, T);
         let moving = false;
         if (state.started) {
@@ -5332,7 +5404,7 @@ ${lines.join("\n")}`;
           const S = SITES[state.site], lz = state.z - S.oz, inside = !state.drive && (lz < -0.3 || state.f >= 1);
           const where = state.drive ? state.drive.label : (!inside ? "Outside " + S.name : S.name + " · " + S.floors[state.f]);
           if (where !== lastWhere) { lastWhere = where; $("where").textContent = where; $("brandSub").textContent = S.addr; }
-          Music.set(state.drive ? 0.35 : inside ? 1 : Math.max(0, 1 - Math.hypot(state.x - S.ox - 4, Math.max(0, lz)) / 18) * 0.18);
+          Music.set(Math.max(stageShow?.musicLevel(state) || 0, state.drive ? 0.35 : inside ? 1 : Math.max(0, 1 - Math.hypot(state.x - S.ox - 4, Math.max(0, lz)) / 18) * 0.18));
         } else if (avatar) {
           const spawn = siteSpawn(state.site); avatar.g.position.set(spawn.x, 0, spawn.z); avatar.g.rotation.y = state.preview + Math.sin(T * 0.4) * 0.25; avatar.pose(0, false, T); if (avatar.tick) avatar.tick(dt);
         }

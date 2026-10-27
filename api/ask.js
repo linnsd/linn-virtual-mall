@@ -2,22 +2,16 @@
 // Set ANTHROPIC_API_KEY in Vercel → Project → Settings → Environment Variables.
 // Optional: ANTHROPIC_MODEL (default below) and ALLOWED_ORIGIN (e.g. https://mall.linn.com.mm).
 import { reserveAiQuota } from '../lib/ai-quota.js';
+import { parseAskMessages } from '../lib/ask-input.js';
 
 export default async function handler(req, res) {
   const origin = process.env.ALLOWED_ORIGIN;
   if (origin && req.headers.origin && req.headers.origin !== origin) return res.status(403).json({ error: "forbidden" });
   if (req.method !== "POST") return res.status(405).json({ error: "method_not_allowed" });
+  const msgs = parseAskMessages(req.body);
+  if (!msgs) return res.status(400).json({ error: "bad_request" });
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return res.status(500).json({ error: "missing_api_key" });
-
-  let body = req.body;
-  if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = {}; } }
-  const input = Array.isArray(body?.messages) ? body.messages.slice(-9) : [];
-  if (input.some(m => !m || !['user', 'assistant'].includes(m.role) || typeof m.content !== 'string')) return res.status(400).json({ error: "bad_request" });
-  const msgs = input.map(m => ({ role: m.role, content: m.content.slice(0, 14000) }));
-  const total = msgs.reduce((n, m) => n + m.content.length, 0);
-  if (!msgs.length || msgs[0].role !== "user" || total > 24000 || !/Linn IT, Mobile & Electronics Mart/.test(msgs[0].content))
-    return res.status(400).json({ error: "bad_request" });
 
   const forwarded = req.headers["x-forwarded-for"];
   const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : 'unknown';
@@ -40,7 +34,9 @@ export default async function handler(req, res) {
     });
     const j = await r.json();
     if (!r.ok) return res.status(r.status === 429 ? 429 : 502).json({ error: "upstream", type: j?.error?.type });
-    const text = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("");
+    if (!Array.isArray(j?.content)) return res.status(502).json({ error: "invalid_upstream_response" });
+    const text = j.content.filter(c => c?.type === "text" && typeof c.text === "string").map(c => c.text).join("");
+    if (!text.trim()) return res.status(502).json({ error: "invalid_upstream_response" });
     return res.status(200).json({ text });
   } catch (e) {
     return res.status(502).json({ error: "upstream_unreachable" });
