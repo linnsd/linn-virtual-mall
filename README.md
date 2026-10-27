@@ -253,3 +253,62 @@ Latest Shop 5 interior: reference floor plan အတိုင်း ပြန်�
 Latest verification: `node --test tests/*.test.js` တွင် tests 70 ခု အောင်မြင်ပါတယ်။ Quantized / interleaved GLB attributes ကို float coordinates အဖြစ် ပြောင်းခြင်း၊ radius အလိုက် wheel rotation၊ reverse / zero speed နှင့် front-only steering regression checks ပါပါတယ်။
 
 Final native check: updated textured motorcycle ဖြင့် Shop 5 → Shop 3 auto arrival ကို ထပ်စမ်းပြီး manual motorcycle / car throttle, steering and braking တွင် app error မတွေ့ပါ။ Manual ride ၏ ခရီးကျော်ခလုတ်ကို **Skip ride** ဟု အမှန်တကယ်လုပ်ဆောင်ချက်နှင့် ကိုက်ညီအောင် ပြထားပါတယ်။
+
+## Guest / Registered users and coupon collection
+
+- Guest အနေနဲ့ account မလိုဘဲ shop ရွေးပြီး ဝင်ကြည့်နိုင်ပါတယ်။ Entry screen သို့မဟုတ် toolbar မှ **Login / Register** ကို သုံးပြီး email/password account ဖွင့်နိုင်ပါတယ်။ ရှိပြီးသား Staff/Admin accounts လည်း ဒီ login ကိုပဲ သုံးပါ။
+- Supabase SQL Editor မှာ `supabase/004_member_coupons.sql` ကို run ပါ။ Email provider / new user signups ကို ဖွင့်ထားပြီး Site URL နဲ့ confirmation redirect URL ကို deployed site အတွက် သတ်မှတ်ပါ။ Anonymous Sign-Ins ကိုလည်း Guest realtime/stats အတွက် ဆက်ဖွင့်ထားပါ။ Email confirmation ဖွင့်ထားရင် inbox ထဲက link နှိပ်ပြီး login ပြန်ဝင်ပါ။
+- Registered user တွေသာ coupon collect လုပ်နိုင်ပါတယ်။ Collection ကို account + UTC day အလိုက် database မှာ သိမ်းပြီး device ပြောင်းလည်း ပြန်ဖတ်နိုင်ပါတယ်။ Guest/local browser coupon history အဟောင်းကို member account ထဲ မကူးပါ။ Daily duplicate collection ကို database primary key က တားပေးပြီး RLS က ကိုယ့် account coupon တွေကိုပဲ ဖတ်ခွင့်ပေးပါတယ်။ Sign out ကို My account မှာ လုပ်နိုင်ပါတယ်။
+- Collection RPC က registered session နဲ့ known coupon ID ကို စစ်ပါတယ်။ Movement ကို browser က တွက်တာဖြစ်လို့ physical proximity ကို server က အတည်မပြုပါ။ Reward က existing demo voucher သာဖြစ်ပြီး real redemption မပါပါ။
+- Manual checks: Guest ဖြင့် ဝင်၍ coupon နားသွားရင် login prompt ပေါ်ပြီး collection မတိုးရပါ။ Register / confirm / login ပြီး coupon collect လုပ်ပါ။ Reload / အခြား device မှာ same account နဲ့ ဝင်လျှင် ယနေ့ collection ပြန်ပေါ်ရပါမယ်။ Account မတူရင် collection သီးခြားဖြစ်ရပါမယ်။ Existing Staff/Admin permissions ကိုလည်း ပြန်စစ်ပါ။
+
+Validation: `node --test tests/*.test.js` — 73 tests passed. `tests/coupons-rls.sql` passed in a disposable local PostgreSQL database (guest denial, account isolation, duplicates, invalid IDs, direct writes). Live Supabase email confirmation / browser signup remains to be checked after applying the migration.
+
+## Google / Gmail account sign-in
+
+Login နဲ့ Register dialog နှစ်ခုလုံးမှာ **Continue with Google** ပါပါတယ်။ Google account အသစ်ကို ပထမဆုံးဝင်ချိန် Supabase က register လုပ်ပေးပြီး နောက်တစ်ခါဆို same account နဲ့ login ဝင်ပေးပါတယ်။ Registered-user coupon rules ကို ဆက်သုံးပါတယ်။ Existing browser Supabase SDK ကိုပဲ သုံးထားပြီး Google SDK / library အသစ် မထည့်ထားပါ။
+
+Setup (SQL အသစ် မလိုပါ):
+
+1. Google Cloud / Google Auth Platform မှာ OAuth consent screen (branding/audience) ပြင်ပြီး OAuth client ကို **Web application** နဲ့ ဖန်တီးပါ။ Testing mode ဆိုရင် စမ်းမယ့် Google account ကို Test users ထဲ ထည့်ပါ။
+2. **Authorized JavaScript origins** မှာ actual deployed site origin (ဥပမာ `https://mall.linn.com.mm`) ကို ထည့်ပါ။ **Authorized redirect URIs** မှာ Supabase Dashboard → Authentication → Sign In / Providers → Google မှ callback URL ကို copy ထည့်ပါ။ လက်ရှိ default project URL အတွက် `https://purmadxwvtruxdtrsutg.supabase.co/auth/v1/callback` ဖြစ်ပါတယ်။ `SUPABASE_URL` project မတူလျှင် အဲဒီ project callback ကို သုံးပါ။
+3. Supabase Dashboard → Authentication → Sign In / Providers → **Google** ကို enable လုပ်ပြီး Google Client ID နဲ့ Client Secret ကို အဲဒီ provider settings ထဲ ထည့်၊ Save လုပ်ပါ။ Client Secret ကို frontend code သို့မဟုတ် public environment variable ထဲ မထည့်ပါနဲ့။
+4. Supabase → Authentication → URL Configuration မှာ **Site URL** ကို deployed site URL ထားပြီး **Redirect URLs** မှာ app URL (trailing slash ပါအောင်၊ ဥပမာ `https://mall.linn.com.mm/`) ကို ခွင့်ပြုပါ။ Local test အတွက် local app URL/port ကိုလည်း ထည့်ပါ။ App က current origin + pathname ဆီ ပြန်ပို့ပြီး query/hash ကို မကူးပါ။
+5. Code deploy ပြီး **Continue with Google** နှိပ် → account ရွေး → consent ပြီး mall ဆီ ပြန်ရောက်လျှင် **My account** နဲ့ coupon collect ကို စမ်းပါ။ Sign out / same Google account ဖြင့် ပြန်ဝင်ပြီး saved coupons ပြန်ပေါ်ရပါမယ်။ Cancel ဖြစ်ရင် login dialog မှာ retry message ပေါ်ပါမယ်။
+
+Reference: [Supabase Google sign-in setup](https://supabase.com/docs/guides/auth/social-sign-in/auth-google?platform=web), [redirect URL configuration](https://supabase.com/docs/guides/auth/redirect-urls).
+
+Validation: `node --test tests/*.test.js` — 76 tests passed, including Google OAuth request, safe return URL, provider failure/retry, and cancellation detection. Live Google consent / callback requires the provider configuration above and has not been verified yet.
+
+## Account settings / profile / coupon history
+
+- Login ပြီးရင် saved `display_name` → Google `full_name` / `name` → email ရှေ့ပိုင်း အစဉ်အတိုင်း character name ကို auto ဖြည့်ပါတယ်။ Avatar / realtime name က existing 14-character limit ကို ဆက်သုံးပါတယ်။
+- **Account settings → Profile** မှာ display name ကို 1–50 characters အတွင်း ပြင်ပြီး Save profile လုပ်နိုင်ပါတယ်။ Supabase Auth user metadata မှာ သိမ်းပြီး character label ကို ချက်ချင်းပြောင်းပေးပါတယ်။ Email ကို read-only ပြထားပြီး Google/email login ကို ဖော်ပြပါတယ်။ Metadata ကို staff/admin permission အတွက် မသုံးပါ။ SQL migration အသစ် မလိုပါ။
+- **My coupons** မှာ ရက်ဟောင်းအပါအဝင် account ရဲ့ collected coupons ကို ဆိုင်၊ floor၊ UTC date နဲ့ ကြည့်နိုင်ပါတယ်။ 30 ခုစီ Load more သုံးပြီး Refresh နဲ့ ပြန်ဖတ်နိုင်ပါတယ်။ HUD coupon count ကို နှိပ်ရင်လည်း coupon history တိုက်ရိုက်ဖွင့်ပါတယ်။ Existing RLS ကို ဆက်သုံးပါတယ်။
+- **Logout** နှိပ်လျှင် Supabase sign-out အောင်မြင်ပြီး page reload လုပ်ပါတယ်။ Account မရှိရင် existing Guest flow ကို ဆက်သုံးနိုင်ပါတယ်။
+- Validation: profile-name fallbacks, successful metadata save, invalid names / guest / failed save rejection, owner-scoped history pagination နှင့် existing tests ကို run ပါ။ Native browser desktop/390px sample-account preview မှာ profile save → character name update၊ history 30 → 35 pagination နဲ့ logout callback ကို စမ်းထားပါတယ်။ Live account writes မစမ်းထားပါ။
+
+## Security fixes: stats, daily coupons and shared AI quotas
+
+Deploy မလုပ်မီ Supabase SQL Editor မှာ **`supabase/005_security_daily_quota.sql`** ကို run ပါ (004 ပြီးမှ)။ ပြန် run လည်း safe ဖြစ်ပါတယ်။ Hosted Supabase မှာ `tests/*sql` fixture တွေကို မ run ပါနဲ့။
+
+- **Admin stats XSS:** visitor metrics ကို bounded non-negative integer အဖြစ်သာ aggregate လုပ်ပြီး labels/questions ကို HTML escape လုပ်ပါတယ်။ Malformed legacy rows ကိုလည်း safe render လုပ်ပါတယ်။ New database constraint က metric/dictionary values မှားနေတဲ့ write အသစ်တွေကို တားပြီး ရှိပြီးသား row တွေကြောင့် migration မကျအောင် `NOT VALID` သုံးထားပါတယ်။ Code deploy ပြီး Admin browser တွေကို refresh လုပ်ပါ။
+- **Daily coupons:** UTC midnight (မြန်မာအချိန် မနက် 06:30) မှာ HUD / collected mesh state ကို အလိုအလျောက် ပြန်ဖတ်ပါတယ်။ Background tab က ပြန်လာရင်လည်း sync လုပ်ပါတယ်။ Stale loads / claims ကို generation guard နဲ့ ပယ်ပြီး RPC က expected collection date ကို server date နဲ့ စစ်ပါတယ်။ Collection load ခဏကျရင် 10 seconds နောက် retry လုပ်ပါတယ်။ Analytics day နဲ့ daily draw date ကိုလည်း rotate လုပ်ပါတယ်။
+- **Shared AI quotas:** database transaction / advisory lock နဲ့ server instances အားလုံးအတွက် limit ကို atomic reserve လုပ်ပါတယ်။ Default **IP တစ်ခုလျှင် 12 requests/minute၊ site တစ်ခုလုံး 120/minute၊ 1,000/day (UTC)** ဖြစ်ပါတယ်။ Request failed/upstream failed လည်း reservation ကို မပြန်လျှော့ပါ။ Global limit က IP ပြောင်းသုံးတာကိုပါ ကန့်သတ်ပါတယ်။ Fixed calendar windows ဖြစ်ပြီး sliding window မဟုတ်ပါ။ Daily request cap ဖြစ်ပြီး exact dollar budget မဟုတ်ပါ။
+
+Vercel → Settings → Environment Variables မှာ server-only values ထည့်ပြီး redeploy လုပ်ပါ:
+
+- `SUPABASE_URL`: browser သုံးနေတဲ့ project URL (လက်ရှိ default `https://purmadxwvtruxdtrsutg.supabase.co`)။
+- `SUPABASE_SECRET_KEY`: Supabase Project Settings → API Keys မှ **secret key** (`sb_secret_…`)။ Legacy `SUPABASE_SERVICE_ROLE_KEY` လည်း fallback အနေနဲ့ ရပါတယ်။ ဒီ key တွေကို public config / frontend / git ထဲ မထည့်ပါနဲ့။
+- `AI_RATE_LIMIT_SALT` (optional): stable server-only random value; မထည့်ရင် secret key ကို HMAC salt အဖြစ် သုံးပါတယ်။ Database မှာ raw IP မသိမ်းပါ။ Windows အဟောင်းတွေကို 1–2 UTC days အတွင်း reservation လုပ်ချိန် cleanup လုပ်ပါတယ်။
+- ရှိပြီးသား `ANTHROPIC_API_KEY` ကို ဆက်သုံးပါတယ်။ Quota config ပျောက်/DB ကျရင် **503** ပြန်ပြီး paid AI call မပို့ပါ။ Limit ပြည့်ရင် **429 + Retry-After** ပြန်ပါတယ်။ Database call timeout 5 seconds၊ AI upstream timeout 20 seconds ပါပါတယ်။ Non-Vercel reverse proxy သုံးရင် `x-forwarded-for` ကို proxy က trusted client IP နဲ့ overwrite လုပ်ပေးရပါမယ်။
+
+Limits ပြောင်းရန် SQL Editor မှာ (browser roles မပြင်နိုင်ပါ):
+
+```sql
+update public.mall_ai_quota_config
+set ip_per_minute = 12, global_per_minute = 120, global_per_day = 1000
+where id = true;
+```
+
+Verification: `node --test tests/*.test.js` ဖြင့် real Admin click-handler XSS regression, malformed metrics, UTC rollover / stale network responses, date-bound coupon RPC, quota denial/outage/secret validation နှင့် existing tests အားလုံးကို စစ်ပါတယ်။ `tests/security-quota.sql` ကို disposable local PostgreSQL မှာ စမ်းပြီး migration re-run, legacy data, RLS/role denial, date guards, IP/minute/day limits အောင်မြင်ပါတယ်။ Concurrent local test မှာ clients 20 ခုအနက် shared daily limit 5 ခုသာ admit ဖြစ်ပါတယ်။ Live deployment / secret configuration / paid provider calls မစမ်းထားပါ။

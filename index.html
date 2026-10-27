@@ -1501,6 +1501,104 @@
       z-index: 10
     }
 
+    /* Account UI: native dialog, opaque surfaces and no animation or blur. */
+    dialog.auth-dialog {
+      width: min(420px, calc(100vw - 32px));
+      max-width: calc(100vw - 32px);
+      max-height: calc(var(--visible-height, 100dvh) - 32px);
+      padding: 0;
+      overflow: auto;
+      border: 1px solid #dce4e4;
+      border-radius: 22px;
+      background: #fff;
+      color: #132844;
+      color-scheme: light;
+      box-shadow: 0 20px 64px #07162940;
+      user-select: text
+    }
+
+    .auth-dialog::backdrop { background: #091a35a6 }
+    .auth-form { padding: 28px; display: grid; gap: 20px }
+    .auth-header { display: flex; align-items: center; gap: 10px }
+    .auth-mark {
+      display: grid; place-items: center; width: 36px; height: 36px;
+      border-radius: 11px; background: #e8f5eb; color: #217a39; font-weight: 800
+    }
+    .auth-brand { font-size: 17px; font-weight: 700; letter-spacing: .3px }
+    .auth-close {
+      margin-left: auto; width: 36px; height: 36px; border: 1px solid #e1e7ed;
+      border-radius: 50%; background: #fff; color: #526279; font-size: 24px; line-height: 1
+    }
+    .auth-intro h2 { margin: 0 0 8px; font-size: 28px; line-height: 1.3; letter-spacing: -.4px }
+    .auth-intro p { margin: 0; color: #59697b; font-size: 13px; line-height: 1.9; overflow-wrap: anywhere }
+    .auth-tabs { display: flex; padding: 4px; gap: 4px; border-radius: 12px; background: #eef2f5 }
+    .auth-tabs button {
+      flex: 1; min-height: 42px; border: 0; border-radius: 9px; background: transparent;
+      color: #58677a; font-weight: 700; font-size: 15px
+    }
+    .auth-tabs button[aria-pressed="true"] { background: #fff; color: #176e32; box-shadow: 0 1px 4px #10243b12 }
+    .auth-google {
+      display: flex; justify-content: center; align-items: center; gap: 12px;
+      min-height: 48px; width: 100%; padding: 10px 16px; border: 1px solid #ccd6e0;
+      border-radius: 11px; background: #fff; color: #25344a; font-size: 15px; font-weight: 600
+    }
+    .auth-google:hover { background: #f5f8fa; border-color: #aab9c9 }
+    .auth-google svg { width: 20px; height: 20px; flex-shrink: 0 }
+    .auth-divider { display: flex; align-items: center; gap: 12px; color: #738091; font-size: 12px }
+    .auth-divider::before, .auth-divider::after { content: ""; height: 1px; background: #e2e8ef; flex: 1 }
+    .auth-fields { display: grid; gap: 16px; min-width: 0 }
+    .auth-fields label { display: grid; gap: 7px; font-size: 14px; font-weight: 600 }
+    .auth-fields input {
+      width: 100%; min-width: 0; min-height: 48px; padding: 11px 13px;
+      border: 1px solid #ccd6e0; border-radius: 10px; background: #fafcfd;
+      color: #132844; font: inherit; font-size: 16px; user-select: text
+    }
+    .auth-fields input::placeholder { color: #8390a0; font-weight: 400 }
+    .auth-password { display: flex; align-items: center; position: relative }
+    .auth-password input { padding-right: 68px }
+    .auth-password button { position: absolute; right: 6px; min-height: 36px; border: 0; background: transparent; color: #206f39; font-size: 13px; padding: 6px 9px }
+    .auth-note { margin: 0; color: #657587; font-size: 12px; line-height: 1.8 }
+    .auth-message { margin: 0; padding: 10px 12px; border-radius: 10px; background: #f0f5f9; color: #324b67; font-size: 13px; line-height: 1.8; overflow-wrap: anywhere }
+    .auth-message:empty { display: none }
+    .auth-primary {
+      min-height: 48px; width: 100%; padding: 11px 16px; border: 1px solid #22813b;
+      border-radius: 11px; background: #23843d; color: #fff; font-size: 15px; font-weight: 700
+    }
+    .auth-primary:hover { background: #1b7032 }
+    .auth-guest { min-height: 44px; border: 0; border-top: 1px solid #e7edf1; padding: 16px 0 0; background: transparent; color: #526279; font-size: 13px }
+    .auth-dialog button:disabled { opacity: .55; cursor: wait }
+    .auth-dialog [hidden] { display: none !important }
+    .account-dialog .auth-form { gap: 16px; padding: 24px }
+    .account-dialog .auth-fields input { line-height: 1.5 }
+    .account-summary { display: flex; align-items: center; gap: 13px; padding: 14px; border-radius: 14px; background: #f1f7f3; min-width: 0 }
+    .account-avatar { display: grid; place-items: center; flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%; background: #d9eddf; color: #216c36; font-size: 23px; font-weight: 700 }
+    .account-summary > div { min-width: 0 }
+    .account-summary strong { display: block; font-size: 17px; overflow-wrap: anywhere }
+    .account-summary [data-email] { display: block; color: #657587; font-size: 13px; overflow-wrap: anywhere }
+    .account-profile { display: grid; gap: 18px }
+    .account-profile input[readonly] { background: #edf1f5; color: #59697b }
+    .account-coupon-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px }
+    .account-coupon-heading h3 { margin: 0 0 4px; font-size: 18px }
+    .account-refresh { min-height: 40px; padding: 7px 12px; border: 1px solid #d1dce0; background: #fff; border-radius: 9px; color: #216c36 }
+    .account-coupon-list { max-height: min(32vh, 300px); overflow: auto; list-style: none; margin: 16px 0; padding: 0; display: grid; gap: 10px }
+    .account-coupon-list li { display: flex; align-items: center; gap: 12px; padding: 13px; border: 1px dashed #ddc78d; border-radius: 12px; background: #fffaf0 }
+    .account-ticket { flex-shrink: 0; font-size: 24px }
+    .account-coupon-list li > div { min-width: 0 }
+    .account-coupon-list strong { display: block; font-size: 15px }
+    .account-coupon-list li div span { display: block; color: #7a6b4c; font-size: 12px; margin-top: 4px; overflow-wrap: anywhere }
+    .account-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid #e2e8ef; padding-top: 16px }
+    .account-logout { flex-shrink: 0; min-height: 42px; padding: 8px 16px; border: 1px solid #e8caca; border-radius: 9px; background: #fff8f8; color: #a63838; font-size: 14px; font-weight: 600 }
+    .member-entry { display: grid; gap: 12px; padding: 14px; border: 1px solid #ffffff30; border-radius: 13px; background: #ffffff0a }
+    .member-entry #memberStatus { margin: 0; font-size: 12px; line-height: 1.9 }
+    .member-actions { display: flex; gap: 8px }
+    .member-actions button { flex: 1; min-height: 42px; padding: 8px 12px; border: 1px solid #ffffff60; border-radius: 9px; background: transparent; color: inherit; font-size: 13px; font-weight: 600 }
+    .member-actions #memberRegister { border-color: #67cf83; background: #dbf7e3; color: #165c2b }
+    .member-actions button:hover { border-color: #91e4a5 }
+    @media (max-width: 480px) {
+      .auth-form { padding: 22px; gap: 17px }
+      .auth-intro h2 { font-size: 25px }
+    }
+
     /* Compact HUD: keep driving/walking controls clear on narrow phones and tablets. */
     :root {
       --visible-height: 100dvh;
@@ -2099,7 +2197,7 @@
           escalators</span></div>
     </div>
   </div>
-  <div class="pills hud"><span class="pill panel" id="couponHud" title="Golden coupons found">🎟 0/12</span><button
+  <div class="pills hud"><button type="button" class="pill panel" id="couponHud" title="Coupons / Account">🎟 Login / Register</button><button
       type="button" class="pill panel hidden" id="staffPill">🟢 <span id="staffN"></span></button><span
       class="pill panel hidden" id="navPill"><span id="navText"></span> <button id="navCancel" type="button"
         aria-label="Stop directions">✕</button></span></div>
@@ -2344,6 +2442,10 @@
           <option value="4">Shop 4 · Myoma Market</option>
           <option value="5">Shop 5 · Ottarathiri </option>
         </select></div>
+      <div class="grp member-entry">
+        <p id="memberStatus" role="status">Guest အနေနဲ့ ဝင်ကြည့်နိုင်ပါတယ်။ Coupon collect လုပ်ရန် Login / Register လုပ်ပါ။</p>
+        <div class="member-actions"><button id="memberLogin" type="button">Login ဝင်ရန်</button><button id="memberRegister" type="button">Register လုပ်ရန်</button></div>
+      </div>
       <button class="go" id="go" type="button">Enter Shop 1</button>
       <small>Music plays softly outside and gets louder inside the store.</small>
     </div>
@@ -2355,6 +2457,8 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
   <script type="module">
+    import { renderVisitorStats } from "./lib/stats.js";
+    import { createDailyCoupons, utcDay } from "./lib/daily-coupons.js";
     import { advanceCar, findCarContact, boxContact, CAR_HULL, drivingSpeed, autoDriveMustYield, waitsForAutoCrossing } from './lib/driving.js';
     import { initialQuality, renderBudget, lowerQuality } from './lib/quality.js';
     import { parkingFor } from './lib/parking.js';
@@ -2621,38 +2725,130 @@
         ["car_body", "Car body", "3D model (.glb)", "glb"], ["bike_body", "Motorbike", "3D model (.glb)", "glb"],
       ];
       const ASSET_IDS = {}; const GLB = {}; const IMG_TARGETS = {};
-      let dbApi = null, assetsApi = null, mallBackend = null;
+      let dbApi = null, assetsApi = null, mallBackend = null, memberUser = null, couponStore = null, dailyCoupons = null, accountSettings = null;
       async function initBackend() {
         if (window.claude && window.claude.use) return;
+        const { hasOAuthError } = await import("./supabase/auth.js");
+        const oauthFailed = hasOAuthError(location.href);
         try { const { connectMall } = await import("./supabase/browser.js"); mallBackend = await connectMall(); dbApi = mallBackend.database; }
         catch (e) { console.warn("Supabase unavailable", e); }
-        initAccount();
+        initAccount(oauthFailed);
       }
-      function initAccount() {
-        const button = document.createElement("button"); button.type = "button"; button.id = "accountBtn"; button.textContent = "Staff login";
+      function initAccount(oauthFailed = false) {
+        const button = document.createElement("button"); button.type = "button"; button.id = "accountBtn"; button.textContent = "Login / Register";
         $("langBtn").parentElement.prepend(button); layoutTools();
-        const dialog = document.createElement("dialog"); dialog.className = "panel";
-        dialog.innerHTML = `<form style="display:grid;gap:12px;max-width:320px;padding:16px"><h2>Admin / Staff login</h2><label>Email<input name="email" type="email" autocomplete="username" required style="display:block;width:100%"></label><label>Password<input name="password" type="password" autocomplete="current-password" required style="display:block;width:100%"></label><p role="status"></p><button type="submit">Sign in</button><button type="button" data-close>Close</button></form>`;
-        document.body.append(dialog); const form = dialog.querySelector("form"), message = form.querySelector('[role="status"]');
-        dialog.addEventListener("keydown", e => e.stopPropagation());
-        form.querySelector('[data-close]').onclick = () => { if (typeof dialog.close === "function") dialog.close(); else dialog.removeAttribute("open"); };
-        button.onclick = async () => {
-          if (!mallBackend) { toast("Database connection unavailable. Please reload."); return; }
-          const { data } = await mallBackend.client.auth.getSession();
-          if (data.session && !data.session.user.is_anonymous) {
-            const { error } = await mallBackend.client.auth.signOut();
-            if (error) { toast("Couldn't sign out. Try again."); return; } location.reload(); return;
-          }
-          if (typeof dialog.showModal === "function") dialog.showModal(); else { dialog.classList.add("fallback-dialog"); dialog.setAttribute("open", ""); }
-        };
-        form.onsubmit = async e => {
-          e.preventDefault(); const submit = form.querySelector('[type="submit"]'); submit.disabled = true; message.textContent = "Signing in…";
+        const dialog = document.createElement("dialog"); dialog.className = "auth-dialog"; dialog.setAttribute("aria-labelledby", "authTitle");
+        dialog.innerHTML = `<form class="auth-form">
+          <div class="auth-header"><span class="auth-mark" aria-hidden="true">L</span><span class="auth-brand">LINN IT MALL</span><button type="button" class="auth-close" data-close aria-label="Close">×</button></div>
+          <div class="auth-intro"><h2 id="authTitle">Welcome back</h2><p data-description>Account ဝင်ပြီး သင့် coupon တွေကို ဆက်လက်စုဆောင်းပါ။</p></div>
+          <div class="auth-tabs" role="group" aria-label="Account access"><button type="button" data-login aria-pressed="true">Login</button><button type="button" data-register aria-pressed="false">Register</button></div>
+          <button type="button" class="auth-google" data-google><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.8-.4-4.1H24v7.8h11a9.4 9.4 0 0 1-4.1 6.2v5.1h6.6c3.9-3.6 6.1-8.8 6.1-15z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.6-5.1c-1.8 1.2-4.1 1.9-6.9 1.9-5.3 0-9.9-3.6-11.5-8.4H5.7v5.3A20.4 20.4 0 0 0 24 44z"/><path fill="#FBBC05" d="M12.5 27.5a12.3 12.3 0 0 1 0-7.8v-5.3H5.7a20 20 0 0 0 0 18.4z"/><path fill="#EA4335" d="M24 11.3c3 0 5.6 1 7.7 3l5.8-5.8A19.4 19.4 0 0 0 24 3C16.1 3 9.2 7.5 5.7 14.4l6.8 5.3A12.1 12.1 0 0 1 24 11.3z"/></svg>Continue with Google</button>
+          <div class="auth-divider">or use email</div>
+          <div class="auth-fields">
+            <label>Email address<input name="email" type="email" autocomplete="username" placeholder="you@example.com" required></label>
+            <label>Password<span class="auth-password"><input name="password" type="password" minlength="6" autocomplete="current-password" placeholder="သင့် password ထည့်ပါ" required><button type="button" data-password aria-label="Show password" aria-pressed="false">Show</button></span></label>
+            <p class="auth-note" data-note>Staff / Admin account များလည်း ဒီနေရာမှ ဝင်နိုင်ပါတယ်။</p>
+          </div>
+          <p class="auth-message" role="status" aria-live="polite"></p>
+          <button class="auth-primary" type="submit">Login ဝင်ရန်</button>
+          <button type="button" class="auth-guest" data-close>Guest အနေနဲ့ ဆက်ကြည့်မည် →</button>
+        </form>`;
+        document.body.append(dialog);
+        const form = dialog.querySelector("form"), message = form.querySelector('[role="status"]'), submit = form.querySelector('[type="submit"]'), loginTab = form.querySelector('[data-login]'), registerTab = form.querySelector('[data-register]');
+        const google = form.querySelector('[data-google]');
+        function setBusy(busy) {
+          submit.disabled = loginTab.disabled = registerTab.disabled = google.disabled = busy;
+          form.setAttribute("aria-busy", String(busy));
+        }
+        google.onclick = async () => {
+          if (!mallBackend) { message.textContent = "Account connection unavailable. Please reload."; return; }
+          setBusy(true); message.textContent = "Google သို့ ချိတ်ဆက်နေပါသည်…";
           try {
-            const { error } = await mallBackend.client.auth.signInWithPassword({ email: form.elements.email.value.trim(), password: form.elements.password.value });
-            if (error) throw error; location.reload();
-          } catch (e) { message.textContent = e.message || "Couldn't sign in"; submit.disabled = false; }
+            const { signInWithGoogle } = await import("./supabase/auth.js");
+            await signInWithGoogle(mallBackend.client, location.href);
+          } catch (e) { message.textContent = e.message || "Google sign-in မအောင်မြင်ပါ။ ပြန်ကြိုးစားပါ။"; setBusy(false); }
         };
-        if (mallBackend) mallBackend.client.auth.getSession().then(({ data }) => { if (data.session && !data.session.user.is_anonymous) button.textContent = "Sign out"; });
+        let registering = false;
+        function setMode(mode) {
+          registering = mode; message.textContent = "";
+          submit.textContent = mode ? "Register လုပ်ရန်" : "Login ဝင်ရန်";
+          loginTab.setAttribute("aria-pressed", String(!mode)); registerTab.setAttribute("aria-pressed", String(mode));
+          form.querySelector("#authTitle").textContent = memberUser ? "My account" : mode ? "Join the coupon hunt" : "Welcome back";
+          form.querySelector("[data-description]").textContent = memberUser ? memberUser.email : mode ? "အကောင့်ဖွင့်ပြီး ဆိုင်ထဲက coupon တွေကို လိုက်စုဆောင်းပါ။" : "Account ဝင်ပြီး သင့် coupon တွေကို ဆက်လက်စုဆောင်းပါ။";
+          form.querySelector("[data-note]").textContent = mode ? "Password အနည်းဆုံး ၆ လုံး သုံးပါ။ Email အတည်ပြုရန် လိုအပ်နိုင်ပါတယ်။" : "Staff / Admin account များလည်း ဒီနေရာမှ ဝင်နိုင်ပါတယ်။";
+          for (const el of [form.querySelector(".auth-tabs"), form.querySelector(".auth-fields"), google, form.querySelector(".auth-divider"), submit]) el.hidden = !!memberUser;
+          form.elements.email.disabled = form.elements.password.disabled = !!memberUser;
+          form.elements.password.type = "password";
+          form.querySelector("[data-password]").textContent = "Show";
+          form.querySelector("[data-password]").setAttribute("aria-label", "Show password");
+          form.querySelector("[data-password]").setAttribute("aria-pressed", "false");
+          form.elements.password.autocomplete = mode ? "new-password" : "current-password";
+        }
+        function open(mode = false) {
+          if (memberUser && accountSettings) { accountSettings.open(); return; }
+          setMode(mode);
+          if (!mallBackend) message.textContent = "Account connection unavailable. Guest အနေနဲ့ ဝင်ကြည့်နိုင်ပါတယ်။";
+          if (typeof dialog.showModal === "function") dialog.showModal(); else { dialog.classList.add("fallback-dialog"); dialog.setAttribute("open", ""); }
+        }
+        dialog.addEventListener("keydown", e => e.stopPropagation());
+        for (const close of form.querySelectorAll('[data-close]')) close.onclick = () => { if (typeof dialog.close === "function") dialog.close(); else dialog.removeAttribute("open"); form.elements.password.value = ""; };
+        dialog.addEventListener("close", () => { form.elements.password.value = ""; });
+        loginTab.onclick = () => setMode(false); registerTab.onclick = () => setMode(true);
+        form.querySelector('[data-password]').onclick = e => {
+          const showing = form.elements.password.type === "password";
+          form.elements.password.type = showing ? "text" : "password";
+          e.currentTarget.textContent = showing ? "Hide" : "Show";
+          e.currentTarget.setAttribute("aria-label", showing ? "Hide password" : "Show password");
+          e.currentTarget.setAttribute("aria-pressed", String(showing));
+        };
+        button.onclick = () => open();
+        $("memberLogin").onclick = () => open(); $("memberRegister").onclick = () => open(true);
+        form.onsubmit = async e => {
+          e.preventDefault();
+          if (!mallBackend) { message.textContent = "Account connection unavailable. Please reload."; return; }
+          setBusy(true); message.textContent = registering ? "Registering…" : "Signing in…";
+          try {
+            const credentials = { email: form.elements.email.value.trim(), password: form.elements.password.value };
+            const { data, error } = registering ? await mallBackend.client.auth.signUp(credentials) : await mallBackend.client.auth.signInWithPassword(credentials);
+            if (error) throw error;
+            if (data.session) { location.reload(); return; }
+            message.textContent = "Email ထဲက confirmation link ကို နှိပ်ပြီး Login ဝင်ပါ။";
+            form.elements.password.value = "";
+          } catch (e) { message.textContent = e.message || "Couldn't sign in"; }
+          finally { setBusy(false); }
+        };
+        if (oauthFailed) { open(); message.textContent = "Google sign-in မပြီးဆုံးပါ။ ပြန်ကြိုးစားပါ သို့မဟုတ် email နဲ့ ဝင်ပါ။"; }
+        if (mallBackend) (async () => {
+          try {
+            const { isRegisteredUser, createCouponStore } = await import("./supabase/coupons.js");
+            const { data, error } = await mallBackend.client.auth.getSession(); if (error) throw error;
+            if (!isRegisteredUser(data.session?.user)) { couponHud(); return; }
+            const [{ accountName }, { createAccountSettings }] = await Promise.all([import("./supabase/profile.js"), import("./supabase/account-ui.js")]);
+            function applyProfile(user) {
+              memberUser = user;
+              $("name").value = accountName(user).slice(0, 14); rebuildGuest(); NET.last = "";
+            }
+            applyProfile(data.session.user); couponStore = createCouponStore(mallBackend.client);
+            accountSettings = createAccountSettings({
+              client: mallBackend.client, getUser: () => memberUser, couponStore,
+              onProfileSaved: applyProfile, onSignOut: () => location.reload(),
+            });
+            button.textContent = "Account settings";
+            $("memberStatus").textContent = "Account ဝင်ထားပါပြီ။ ဆိုင်ထဲက ရွှေရောင် coupon တွေကို လိုက် collect လုပ်နိုင်ပါတယ်။";
+            $("memberRegister").hidden = true; $("memberLogin").textContent = "Account settings";
+            dailyCoupons = createDailyCoupons({
+              store: couponStore,
+              onDayChange: () => { for (const c of COUPONS) c.retryAt = 0; },
+              onChange: snapshot => {
+                couponGot = snapshot.ids;
+                for (const c of COUPONS) { c.got = couponGot.has(c.id); c.g.visible = !c.got; }
+                couponHud();
+              },
+            });
+            couponHud();
+            await dailyCoupons.refresh();
+          } catch (e) { console.warn("Member coupons unavailable", e); toast("Coupon collection unavailable. Please reload and try again."); }
+        })();
       }
       const gltfLoader = THREE.GLTFLoader ? new THREE.GLTFLoader() : null;
       function b64ToBuf(b64) { const s = atob(b64.trim()); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u.buffer; }
@@ -4310,8 +4506,9 @@ ${lines.join("\n")}`;
       function updateAds(T) { const i = Math.floor(T / 5) % SLIDES.length; for (const a of ADS) { if (a.site !== state.site || Math.abs(a.f - state.f) > 1) continue; if (a.i !== i) { a.i = i; drawSlide(a, SLIDES[i]); } } }
 
       /* ============ Coupon hunt ============ */
-      const COUPONS = [], TODAY = new Date().toISOString().slice(0, 10);
-      let couponGot = new Set(); try { const s = JSON.parse(localStorage.getItem("linnmall.coupons") || "{}"); if (s.day === TODAY) couponGot = new Set(s.ids); } catch (e) { }
+      const COUPONS = [];
+      let TODAY = utcDay(new Date());
+      let couponGot = new Set(), couponHintAt = -Infinity;
       const couponTex = canvasTex(256, 144, (g, W, H) => {
         const gr = g.createLinearGradient(0, 0, W, H); gr.addColorStop(0, "#ffe08a"); gr.addColorStop(1, "#d39b20"); g.fillStyle = gr; rr(g, 4, 4, W - 8, H - 8, 18); g.fill();
         g.strokeStyle = "#8a5a00"; g.setLineDash([8, 6]); g.lineWidth = 4; rr(g, 16, 16, W - 32, H - 32, 12); g.stroke(); g.setLineDash([]);
@@ -4323,23 +4520,49 @@ ${lines.join("\n")}`;
         const glow = new THREE.Mesh(new THREE.RingGeometry(0.35, 0.55, 24), new THREE.MeshBasicMaterial({ color: 0xffd257, transparent: true, opacity: .35, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false })); glow.rotation.x = -Math.PI / 2; glow.position.y = -1.05; g.add(glow);
         g.position.set(lx + S.ox, f * F2 + 1.15, lz + S.oz); scene.add(g); const c = { id, site, f, x: lx + S.ox, z: lz + S.oz, g, got: couponGot.has(id) }; g.visible = !c.got; COUPONS.push(c);
       }
-      function couponHud() { $("couponHud").textContent = `🎟 ${couponGot.size}/${COUPONS.length}`; }
+      function couponHud() {
+        $("couponHud").textContent = memberUser ? `🎟 ${couponGot.size}/${COUPONS.length}` : "🎟 Login / Register";
+        $("couponHud").onclick = () => accountSettings ? accountSettings.open("coupons") : $("accountBtn")?.click();
+      }
+      async function collectCoupon(c) {
+        try {
+          const result = await dailyCoupons.collect(c.id);
+          if (!result?.added) return;
+          track(d => { d.coupons++; });
+          if (result.count === 5) { toast("🎉 5 coupons found! Demo reward unlocked"); addChat("", "🎉 Coupon hunt: you found 5 golden coupons. Demo reward: 5% OFF voucher (sample code LINN5-" + result.day.slice(5).replace("-", "") + ").", true); }
+          else toast(`🎟 Coupon found! ${couponGot.size}/${COUPONS.length}`);
+        } catch (e) { c.retryAt = performance.now() + 10000; toast("Coupon မသိမ်းနိုင်ပါ။ ခဏနေရင် ပြန်ကြိုးစားပါ။"); }
+      }
       function updateCoupons(T) {
         for (const c of COUPONS) {
           if (c.got || c.site !== state.site) continue; c.g.rotation.y = T * 1.8; c.g.position.y = c.f * F2 + 1.15 + Math.sin(T * 2 + c.x) * 0.08;
           if (!state.drive && c.f === state.f && Math.hypot(c.x - state.x, c.z - state.z) < 1.3) {
-            c.got = true; c.g.visible = false; couponGot.add(c.id);
-            try { localStorage.setItem("linnmall.coupons", JSON.stringify({ day: TODAY, ids: [...couponGot] })); } catch (e) { }
-            track(d => { d.coupons++; }); couponHud();
-            if (couponGot.size === 5) { toast("🎉 5 coupons found! Demo reward unlocked"); addChat("", "🎉 Coupon hunt: you found 5 golden coupons. Demo reward: 5% OFF voucher (sample code LINN5-" + TODAY.slice(5).replace("-", "") + ").", true); }
-            else toast(`🎟 Coupon found! ${couponGot.size}/${COUPONS.length}`);
+            if (!memberUser) {
+              if (T - couponHintAt > 12) { couponHintAt = T; toast("Coupon collect လုပ်ရန် Login / Register လုပ်ပါ။"); }
+              continue;
+            }
+            if (dailyCoupons?.ready && !dailyCoupons.isPending(c.id) && !(c.retryAt > performance.now())) collectCoupon(c);
           }
         }
       }
 
+      function syncDailyState() {
+        const current = utcDay(new Date());
+        if (current !== TODAY) {
+          flushStats(true); TODAY = current; initStats();
+          if ($("draw").classList.contains("on")) {
+            try { $("spinBtn").disabled = drawBusy || localStorage.getItem("linnmall.draw") === TODAY; } catch (e) { }
+            $("drawRes").textContent = "";
+          }
+        }
+        dailyCoupons?.refresh().catch(e => console.warn("Coupon refresh failed", e));
+      }
+      setInterval(syncDailyState, 1000);
+      addEventListener("visibilitychange", () => { if (!document.hidden) syncDailyState(); });
+
       /* ============ Lucky draw ============ */
       const PRIZES = [["Phone case", "#1746C9"], ["Try again", "#9aa3ad"], ["5% voucher", "#2FA84A"], ["Screen protector", "#f2b134"], ["Thank you", "#c2571a"], ["LINN tote bag", "#7b3fd1"], ["Try again", "#9aa3ad"], ["Free cable", "#d22630"]];
-      let wheelRot = 0;
+      let wheelRot = 0, drawBusy = false;
       function luckyStand(site, lx, lz) {
         const S = SITES[site];
         const wt = canvasTex(256, 256, (g, W, H) => drawWheel(g, W)); B(lx + S.ox, 0, lz + S.oz, 0.08, 1.2, 0.08, 0x6b7280);
@@ -4356,16 +4579,21 @@ ${lines.join("\n")}`;
       }
       function openDraw() {
         state.shopping = true; state.keys = {}; const c = $("wheel"); drawWheel(c.getContext("2d"), c.width);
-        const done = localStorage.getItem("linnmall.draw") === TODAY; $("spinBtn").disabled = done; $("drawRes").textContent = done ? "You've had today's spin. Come back tomorrow!" : "";
+        const done = localStorage.getItem("linnmall.draw") === TODAY; $("spinBtn").disabled = drawBusy || done; $("drawRes").textContent = done ? "You've had today's spin. Come back tomorrow!" : "";
         $("draw").classList.add("on"); $("prompt").classList.remove("on");
       }
       $("spinBtn").onclick = () => {
-        if (localStorage.getItem("linnmall.draw") === TODAY) return; $("spinBtn").disabled = true; $("drawRes").textContent = "";
+        syncDailyState(); if (drawBusy || localStorage.getItem("linnmall.draw") === TODAY) return; drawBusy = true; const drawDay = TODAY; $("spinBtn").disabled = true; $("drawRes").textContent = "";
         const n = PRIZES.length, i = Math.floor(Math.random() * n); wheelRot += 360 * 5 + (360 - ((i + 0.5) / n) * 360) - (wheelRot % 360);
         $("wheel").style.transform = `rotate(${wheelRot}deg)`;
         setTimeout(() => {
+          drawBusy = false; syncDailyState();
+          if (TODAY !== drawDay) {
+            $("spinBtn").disabled = localStorage.getItem("linnmall.draw") === TODAY;
+            $("drawRes").textContent = "A new day has started. You can spin again."; return;
+          }
           const p = PRIZES[i][0]; $("drawRes").textContent = /Try again|Thank you/.test(p) ? "Thank you! Try again tomorrow." : `🎉 You won: ${p} (demo prize)`;
-          try { localStorage.setItem("linnmall.draw", TODAY); } catch (e) { } track(d => { d.draws++; d.prizes[p] = (d.prizes[p] || 0) + 1; });
+          try { localStorage.setItem("linnmall.draw", drawDay); } catch (e) { } track(d => { d.draws++; d.prizes[p] = (d.prizes[p] || 0) + 1; });
         }, 3700);
       };
       $("drawClose").onclick = () => { $("draw").classList.remove("on"); state.shopping = false; };
@@ -4553,7 +4781,7 @@ ${lines.join("\n")}`;
           const uid = session.session?.user.id; if (!uid) return;
           const { data, error } = await mallBackend.client.from("mall_roles").select("role").eq("user_id", uid).maybeSingle();
           if (error) { console.warn("Role lookup failed", error); return; }
-          if (!data) { if (!session.session.user.is_anonymous) toast("Your account has no Admin/Staff role yet."); return; }
+          if (!data) return;
           initAdmin();
           const sections = $("admin").querySelectorAll(".adminBody > section");
           sections.forEach((section, i) => { section.classList.toggle("hidden", data.role !== "admin" && i !== 0); });
@@ -4572,18 +4800,7 @@ ${lines.join("\n")}`;
         $("stats").classList.add("on"); state.shopping = true; $("statBody").textContent = "Loading…";
         try {
           const since = new Date(Date.now() - 6 * 864e5).toISOString().slice(0, 10); const snap = await dbApi.collection("stats").where("day", ">=", since).limit(1000).get();
-          const rows = snap.docs.map(d => d.data()), days = {}, corners = {}, prizes = {}; let coupons = 0, draws = 0, drives = 0, flights = 0, sits = 0, phone = 0; const asks = [];
-          for (const r of rows) {
-            days[r.day] = (days[r.day] || 0) + 1; for (const [k, v] of Object.entries(r.corners || {})) corners[k] = (corners[k] || 0) + v; for (const [k, v] of Object.entries(r.prizes || {})) prizes[k] = (prizes[k] || 0) + v;
-            coupons += r.coupons || 0; draws += r.draws || 0; drives += r.drives || 0; flights += r.flights || 0; sits += r.sits || 0; if (r.device === "phone") phone++; for (const a of r.asks || []) asks.push(a);
-          }
-          const bars = (obj, n = 8) => { const e = Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, n), mx = Math.max(1, ...e.map(x => x[1])); return e.length ? e.map(([k, v]) => `<div class="bar"><span>${esc(k)}</span><i style="width:${Math.round(v / mx * 100)}%"></i><b>${v}</b></div>`).join("") : '<p class="mm">No data yet</p>'; };
-          asks.sort((a, b) => b.at - a.at);
-          $("statBody").innerHTML = `<h3>Visits per day (${rows.length} total, ${phone} on phones)</h3>${bars(Object.fromEntries(Object.entries(days).sort()), 7)}
-      <h3>Most visited corners</h3>${bars(corners)}
-      <h3>What customers ask the AI staff</h3>${asks.length ? '<ol class="qs">' + asks.slice(0, 20).map(a => `<li>${esc(a.q)} <span class="mm">· ${esc(a.staff)}, ${esc(a.site)}</span></li>`).join("") + "</ol>" : '<p class="mm">No questions yet</p>'}
-      <h3>Engagement</h3><p>Coupons found: <b>${coupons}</b> · Lucky draws: <b>${draws}</b> · Car rides: <b>${drives}</b> · Flights: <b>${flights}</b> · Times seated: <b>${sits}</b></p>
-      <h3>Lucky draw results</h3>${bars(prizes)}`;
+          $("statBody").innerHTML = renderVisitorStats(snap.docs.map(d => d.data()));
         } catch (e) { $("statBody").textContent = "Couldn't load stats (" + ((e && e.code) || "error") + ")."; }
       };
       $("statsClose").onclick = () => { $("stats").classList.remove("on"); state.shopping = false; };

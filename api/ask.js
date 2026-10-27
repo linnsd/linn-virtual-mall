@@ -1,7 +1,7 @@
 // Vercel serverless function: the AI staff in the mall talk to Claude through here.
 // Set ANTHROPIC_API_KEY in Vercel → Project → Settings → Environment Variables.
 // Optional: ANTHROPIC_MODEL (default below) and ALLOWED_ORIGIN (e.g. https://mall.linn.com.mm).
-const hits = new Map(); // simple per-instance rate limit (best effort on serverless)
+import { reserveAiQuota } from '../lib/ai-quota.js';
 
 export default async function handler(req, res) {
   const origin = process.env.ALLOWED_ORIGIN;
@@ -10,22 +10,31 @@ export default async function handler(req, res) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return res.status(500).json({ error: "missing_api_key" });
 
-  const ip = (req.headers["x-forwarded-for"] || "").split(",")[0].trim() || "unknown";
-  const now = Date.now(), win = (hits.get(ip) || []).filter(t => now - t < 60000);
-  if (win.length >= 12) return res.status(429).json({ error: "rate_limited" });
-  win.push(now); hits.set(ip, win);
-
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = {}; } }
-  const msgs = (Array.isArray(body?.messages) ? body.messages : []).slice(-9)
-    .map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: String(m.content || "").slice(0, 14000) }));
+  const input = Array.isArray(body?.messages) ? body.messages.slice(-9) : [];
+  if (input.some(m => !m || !['user', 'assistant'].includes(m.role) || typeof m.content !== 'string')) return res.status(400).json({ error: "bad_request" });
+  const msgs = input.map(m => ({ role: m.role, content: m.content.slice(0, 14000) }));
   const total = msgs.reduce((n, m) => n + m.content.length, 0);
   if (!msgs.length || msgs[0].role !== "user" || total > 24000 || !/Linn IT, Mobile & Electronics Mart/.test(msgs[0].content))
     return res.status(400).json({ error: "bad_request" });
 
+  const forwarded = req.headers["x-forwarded-for"];
+  const ip = typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : 'unknown';
+  try {
+    const quota = await reserveAiQuota(ip);
+    if (!quota.allowed) {
+      res.setHeader('Retry-After', String(quota.retryAfter));
+      return res.status(429).json({ error: "rate_limited" });
+    }
+  } catch {
+    // Fail closed: no paid upstream call without a shared reservation.
+    return res.status(503).json({ error: "ai_temporarily_unavailable" });
+  }
+
   try {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
+      method: "POST", signal: AbortSignal.timeout(20000),
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({ model: process.env.ANTHROPIC_MODEL || "claude-haiku-5-5", max_tokens: 600, messages: msgs }),
     });
